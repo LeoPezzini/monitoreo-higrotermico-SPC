@@ -1,0 +1,16 @@
+.pio/
+.vscode/
+*.bin
+*.elf
+*.map
+
+.DS_Store
+Thumbs.db
+
+# Datos locales de ensayo
+data/
+*.csv
+
+# Credenciales
+secrets.h
+.env
