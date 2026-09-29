@@ -42,7 +42,7 @@ El protocolo de comunicación y el backend definitivos se definirán luego de re
 | Scanner I2C | ✅ Verificado |
 | NSHT30 detectado en `0x44` | ✅ Verificado |
 | Lectura directa de temperatura y humedad | ✅ Verificado |
-| NSHT30 mediante TCA9548A | ⏳ Pendiente |
+| NSHT30 mediante TCA9548A | ✅ Verificado (canal 0) |
 | RTC | ⏳ Pendiente |
 | microSD | ⏳ Pendiente |
 | Adquisición multisensor | ⏳ Pendiente |
@@ -66,8 +66,8 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 ## Próximos pasos
 
-1. Validar un NSHT30 a través del TCA9548A.
-2. Probar varios sensores y ambos multiplexores.
+1. Probar dos NSHT30 con la misma dirección I2C en canales distintos del TCA9548A.
+2. Probar adquisición multisensor y verificar el segundo multiplexor disponible/reemplazo.
 3. Integrar RTC.
 4. Integrar microSD.
 5. Definir el formato de registro.
