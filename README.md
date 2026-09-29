@@ -44,7 +44,7 @@ El protocolo de comunicación y el backend definitivos se definirán luego de re
 | Lectura directa de temperatura y humedad | ✅ Verificado |
 | NSHT30 mediante TCA9548A | ✅ Verificado (canal 0) |
 | RTC | 🧪 DS3231M detectado en 0x68 y lectura de fecha/hora verificada |
-| microSD | ⏳ Pendiente |
+| microSD | 🧪 HW-203: escritura y relectura verificadas con microSD de 2 GB |
 | Adquisición multisensor | 🧪 2 sensores verificados en CH0/CH1; 20 NSHT30 comprobados individualmente |
 | Buffer y retransmisión | ⏳ Pendiente |
 | Backend / Grafana | ⏳ Pendiente |
@@ -66,7 +66,7 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 ## Próximos pasos
 
-1. Verificar retención de fecha/hora del RTC con batería y corte de alimentación.
+1. Integrar una medición NSHT30 + timestamp RTC + almacenamiento en microSD.
 2. Probar adquisición multisensor y verificar el segundo multiplexor disponible/reemplazo.
 3. Integrar RTC.
 4. Integrar microSD.
