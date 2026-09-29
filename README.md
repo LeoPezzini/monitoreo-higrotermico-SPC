@@ -28,8 +28,8 @@ El protocolo de comunicación y el backend definitivos se definirán luego de re
 ## Hardware disponible
 
 - ESP32 DevKit / ESP-WROOM-32
-- 20 x NSHT30
-- 2 x TCA9548A de 8 canales
+- 20 x NSHT30 disponibles (14 previstos actualmente para la instalación; 6 de reserva)
+- TCA9548A de 8 canales: 1 verificado, 1 módulo no responde; 2 reemplazos/repuestos pedidos
 - RTC HW-084 / DS3231
 - módulo microSD HW-203
 - placas preperforadas, fuente y elementos de montaje
@@ -67,13 +67,13 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 ## Próximos pasos
 
-1. Integrar una medición NSHT30 + timestamp RTC + almacenamiento en microSD.
-2. Probar adquisición multisensor y verificar el segundo multiplexor disponible/reemplazo.
-3. Integrar RTC.
-4. Integrar microSD.
-5. Definir el formato de registro.
-6. Implementar adquisición multisensor.
-7. Relevar e integrar la infraestructura de Grafana existente.
-8. Implementar almacenamiento pendiente, confirmación, retransmisión y deduplicación.
-9. Realizar pruebas de fallas y un ensayo prolongado.
-10. Realizar el montaje definitivo.
+1. Incorporar validación CRC-8 de temperatura y humedad del NSHT30.
+2. Definir y probar el manejo explícito de sensores sin respuesta o con CRC inválido.
+3. Realizar contraste/caracterización de los NSHT30 con el instrumento patrón.
+4. Verificar retención del RTC cuando esté disponible la batería LIR2032.
+5. Probar los TCA9548A nuevos al recibirlos y validar dos multiplexores con direcciones distintas.
+6. Escalar la adquisición a los 14 sensores previstos para la instalación.
+7. Caracterizar el bus I²C con las longitudes de cable previstas para la instalación.
+8. Relevar e integrar la infraestructura de base de datos y Grafana existente.
+9. Implementar buffer pendiente, confirmación, retransmisión y deduplicación.
+10. Realizar pruebas de fallas, ensayo prolongado y montaje definitivo.
