@@ -44,8 +44,9 @@ El protocolo de comunicación y el backend definitivos se definirán luego de re
 | Lectura directa de temperatura y humedad | ✅ Verificado |
 | NSHT30 mediante TCA9548A | ✅ Verificado (canal 0) |
 | RTC | 🧪 DS3231M detectado en 0x68 y lectura de fecha/hora verificada |
-| microSD | 🧪 HW-203: escritura y relectura verificadas con microSD de 2 GB |
+| microSD | ✅ HW-203: escritura/relectura y CSV integrado verificados con microSD de 2 GB |
 | Adquisición multisensor | 🧪 2 sensores verificados en CH0/CH1; 20 NSHT30 comprobados individualmente |
+| Cadena sensor → TCA → RTC → SD | ✅ CSV real generado y recuperado; timestamp pendiente de batería del RTC |
 | Buffer y retransmisión | ⏳ Pendiente |
 | Backend / Grafana | ⏳ Pendiente |
 | Instalación final | ⏳ Pendiente |
