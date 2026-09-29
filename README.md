@@ -45,7 +45,7 @@ El protocolo de comunicación y el backend definitivos se definirán luego de re
 | NSHT30 mediante TCA9548A | ✅ Verificado (canal 0) |
 | RTC | ⏳ Pendiente |
 | microSD | ⏳ Pendiente |
-| Adquisición multisensor | 🧪 2 sensores verificados en CH0/CH1 |
+| Adquisición multisensor | 🧪 2 sensores verificados en CH0/CH1; 20 NSHT30 comprobados individualmente |
 | Buffer y retransmisión | ⏳ Pendiente |
 | Backend / Grafana | ⏳ Pendiente |
 | Instalación final | ⏳ Pendiente |
@@ -66,7 +66,7 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 ## Próximos pasos
 
-1. Escalar la prueba a más canales/sensores y definir la topología para los 20 NSHT30.
+1. Probar RTC de forma independiente y verificar fecha/hora.
 2. Probar adquisición multisensor y verificar el segundo multiplexor disponible/reemplazo.
 3. Integrar RTC.
 4. Integrar microSD.
