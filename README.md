@@ -18,19 +18,21 @@ Desarrollar un sistema autónomo y confiable capaz de:
 ## Arquitectura prevista
 
 ```text
-NSHT30 x N -> TCA9548A x 2 -> ESP32 -> Wi-Fi -> servidor / BD -> Grafana
+NSHT30 x 14 -> PCA9548A x 2 -> ESP32 -> Wi-Fi -> servidor / BD -> Grafana
                                   |-> RTC
                                   |-> microSD (buffer local)
 ```
 
-El protocolo de comunicación y el backend definitivos se definirán luego de relevar la infraestructura actualmente utilizada por el grupo de investigación.
+La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con una medición real. HTTP queda como alternativa preferente si la infraestructura existente del grupo dispone de una API compatible. El backend y mecanismo definitivos se decidirán después del relevamiento de la instalación existente.
 
 ## Hardware disponible
 
 - ESP32 DevKit / ESP-WROOM-32
 - 20 x NSHT30 disponibles (14 previstos actualmente para la instalación; 6 de reserva)
-- TCA9548A de 8 canales: 1 verificado, 1 módulo no responde; 2 reemplazos/repuestos pedidos
-- RTC HW-084 / DS3231
+- 2 x PCA9548A nuevos verificados y funcionando simultáneamente en `0x70` y `0x71`
+- 1 x TCA9548A previamente verificado, disponible como repuesto
+- 1 x módulo TCA/PCA anterior no funcional
+- RTC HW-084 / DS3231M
 - módulo microSD HW-203
 - placas preperforadas, fuente y elementos de montaje
 
@@ -39,17 +41,63 @@ El protocolo de comunicación y el backend definitivos se definirán luego de re
 | Bloque | Estado |
 | --- | --- |
 | ESP32 | ✅ Verificado |
-| Scanner I2C | ✅ Verificado |
-| NSHT30 detectado en `0x44` | ✅ Verificado |
-| Lectura directa de temperatura y humedad | ✅ Verificado |
-| NSHT30 mediante TCA9548A | ✅ Verificado (canal 0) |
-| RTC | 🧪 DS3231M detectado en 0x68 y lectura de fecha/hora verificada |
-| microSD | ✅ HW-203: escritura/relectura y CSV integrado verificados con microSD de 2 GB |
-| Adquisición multisensor | 🧪 2 sensores verificados en CH0/CH1; 20 NSHT30 comprobados individualmente |
-| Cadena sensor → TCA → RTC → SD | ✅ CSV real generado y recuperado; timestamp pendiente de batería del RTC |
-| Buffer y retransmisión | ⏳ Pendiente |
-| Backend / Grafana | ⏳ Pendiente |
+| NSHT30 `0x44` | ✅ 20 sensores comprobados individualmente |
+| Multiplexación | ✅ 2 PCA9548A simultáneos: `0x70` y `0x71` |
+| Adquisición multisensor | ✅ 4 NSHT30 simultáneos distribuidos en 2 PCA |
+| RTC | ✅ DS3231M detectado en `0x68`; lectura y timestamp verificados |
+| Retención RTC sin alimentación | ⏳ Pendiente LIR2032 |
+| microSD | ✅ HW-203 con microSD de 2 GB; escritura, relectura y CSV verificados |
+| Cadena 4 sensores → 2 PCA → RTC → SD | ✅ Validada; CSV timestamp-eado generado |
+| Wi-Fi ESP32 | ✅ 2.4 GHz validado |
+| HTTP POST / JSON | ✅ Medición real NSHT30 enviada a servidor de prueba; HTTP 200 y JSON recibido correctamente |
+| CRC-8 NSHT30 | ⏳ Bytes leídos, validación aún no implementada |
+| Buffer / ACK / retransmisión | ⏳ Pendiente |
+| Backend / Grafana real | ⏳ Pendiente de relevamiento |
 | Instalación final | ⏳ Pendiente |
+
+## Pruebas validadas destacadas
+
+### Dos PCA y cuatro sensores
+
+Configuración de banco validada:
+
+```text
+ESP32 I2C GPIO21/22
+ |
+ +-- PCA 0x70
+ |    +-- CH0 -> S01
+ |    +-- CH1 -> S02
+ |
+ +-- PCA 0x71
+      +-- CH0 -> S03
+      +-- CH1 -> S04
+```
+
+Los dos PCA nuevos fueron probados primero individualmente y luego simultáneamente. El segundo utiliza A0 en nivel alto para obtener la dirección `0x71`.
+
+### Integración RTC + microSD
+
+El 2026-10-05 se validó un ciclo completo de cuatro sensores con timestamp común y almacenamiento CSV. Para esta prueba, al no estar instalada todavía la batería del RTC, el sketch ajusta temporalmente el DS3231 a `__DATE__` / `__TIME__` al arrancar. Esa línea no debe permanecer en el firmware definitivo.
+
+Ejemplo validado:
+
+```csv
+timestamp,sensor,temperatura_C,humedad_RH,estado
+2026-10-05T19:21:05,S01,26.27,28.32,OK
+2026-10-05T19:21:05,S02,26.32,35.81,OK
+2026-10-05T19:21:05,S03,26.39,40.40,OK
+2026-10-05T19:21:05,S04,26.29,35.81,OK
+```
+
+### Transmisión HTTP
+
+Se validó:
+
+```text
+NSHT30 -> PCA -> ESP32 -> Wi-Fi -> HTTP POST -> servidor de prueba
+```
+
+Una medición real se serializó como JSON, se envió mediante POST y el servidor respondió HTTP 200 devolviendo correctamente el contenido recibido. El sketch de prueba no contiene credenciales reales.
 
 ## Estrategia de confiabilidad
 
@@ -67,13 +115,14 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 ## Próximos pasos
 
-1. Incorporar validación CRC-8 de temperatura y humedad del NSHT30.
-2. Definir y probar el manejo explícito de sensores sin respuesta o con CRC inválido.
-3. Realizar contraste/caracterización de los NSHT30 con el instrumento patrón.
-4. Verificar retención del RTC cuando esté disponible la batería LIR2032.
-5. Probar los TCA9548A nuevos al recibirlos y validar dos multiplexores con direcciones distintas.
-6. Escalar la adquisición a los 14 sensores previstos para la instalación.
-7. Caracterizar el bus I²C con las longitudes de cable previstas para la instalación.
-8. Relevar e integrar la infraestructura de base de datos y Grafana existente.
-9. Implementar buffer pendiente, confirmación, retransmisión y deduplicación.
-10. Realizar pruebas de fallas, ensayo prolongado y montaje definitivo.
+1. Relevar con el grupo de investigación la infraestructura existente: datasource de Grafana, base de datos, forma de ingreso de datos, red disponible y responsable técnico.
+2. Confirmar si existe una API HTTP compatible; si existe, relevar endpoint, JSON esperado, autenticación y respuesta que confirma persistencia.
+3. Incorporar validación CRC-8 de temperatura y humedad del NSHT30.
+4. Definir manejo explícito de sensor sin respuesta, CRC inválido y fallas de almacenamiento/comunicación.
+5. Verificar retención del RTC con batería LIR2032.
+6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
+7. Realizar contraste/caracterización de los NSHT30 con el instrumento de referencia.
+8. Caracterizar I2C con las longitudes y cableado reales de la instalación.
+9. Implementar buffer de pendientes, confirmación, retransmisión y deduplicación según el backend definitivo.
+10. Probar Wi-Fi y acceso al servidor desde la casilla de ensayo.
+11. Realizar pruebas de fallas, ensayo prolongado y montaje definitivo.
