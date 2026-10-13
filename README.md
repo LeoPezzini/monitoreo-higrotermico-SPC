@@ -50,7 +50,7 @@ La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con
 | Cadena 4 sensores → 2 PCA → RTC → SD | ✅ Validada; CSV timestamp-eado generado |
 | Wi-Fi ESP32 | ✅ 2.4 GHz validado |
 | HTTP POST / JSON | ✅ Medición real NSHT30 enviada a servidor de prueba; HTTP 200 y JSON recibido correctamente |
-| CRC-8 NSHT30 | ⏳ Bytes leídos, validación aún no implementada |
+| CRC-8 NSHT30 | ✅ Validación de temperatura y humedad probada en 4 sensores (sketch independiente); pendiente integración con RTC y SD |
 | Buffer / ACK / retransmisión | ⏳ Pendiente |
 | Backend / Grafana real | ⏳ Pendiente de relevamiento |
 | Instalación final | ⏳ Pendiente |
@@ -99,6 +99,13 @@ NSHT30 -> PCA -> ESP32 -> Wi-Fi -> HTTP POST -> servidor de prueba
 
 Una medición real se serializó como JSON, se envió mediante POST y el servidor respondió HTTP 200 devolviendo correctamente el contenido recibido. El sketch de prueba no contiene credenciales reales.
 
+### Verificación CRC-8 — 2026-10-13
+
+Se probó un sketch independiente con los cuatro NSHT30 conectados a dos PCA9548A. En un ciclo completo los cuatro sensores devolvieron CRC-8 correcto tanto para temperatura como para humedad relativa. S02 presentó inicialmente error I2C código 4 y volvió a responder después de revisar conexiones; posible contacto intermitente no confirmado. No se modificó el firmware anterior de integración.
+
+- [Sketch de prueba CRC-8](firmware/pruebas/nsht30_crc8_4sensores/nsht30_crc8_4sensores.ino)
+- [Resultados y observaciones](docs/pruebas/2026-10-13_crc8_4sensores.md)
+
 ## Estrategia de confiabilidad
 
 ```text
@@ -117,7 +124,7 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 1. Relevar con el grupo de investigación la infraestructura existente: datasource de Grafana, base de datos, forma de ingreso de datos, red disponible y responsable técnico.
 2. Confirmar si existe una API HTTP compatible; si existe, relevar endpoint, JSON esperado, autenticación y respuesta que confirma persistencia.
-3. Incorporar validación CRC-8 de temperatura y humedad del NSHT30.
+3. Integrar la validación CRC-8 ya probada en cuatro NSHT30 al firmware de RTC y microSD.
 4. Definir manejo explícito de sensor sin respuesta, CRC inválido y fallas de almacenamiento/comunicación.
 5. Verificar retención del RTC con batería LIR2032.
 6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
