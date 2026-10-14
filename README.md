@@ -45,12 +45,12 @@ La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con
 | Multiplexación | ✅ 2 PCA9548A simultáneos: `0x70` y `0x71` |
 | Adquisición multisensor | ✅ 4 NSHT30 simultáneos distribuidos en 2 PCA |
 | RTC | ✅ DS3231M detectado en `0x68`; lectura y timestamp verificados |
-| Retención RTC sin alimentación | ⏳ Pendiente LIR2032 |
+| Retención RTC sin alimentación | ✅ CR2032 no recargable, circuito de carga deshabilitado; corte breve validado 2026-10-14 |
 | microSD | ✅ HW-203 con microSD de 2 GB; escritura, relectura y CSV verificados |
 | Cadena 4 sensores → 2 PCA → RTC → SD | ✅ Validada; CSV timestamp-eado generado |
 | Wi-Fi ESP32 | ✅ 2.4 GHz validado |
 | HTTP POST / JSON | ✅ Medición real NSHT30 enviada a servidor de prueba; HTTP 200 y JSON recibido correctamente |
-| CRC-8 NSHT30 | ✅ Validación de temperatura y humedad probada en 4 sensores (sketch independiente); pendiente integración con RTC y SD |
+| CRC-8 NSHT30 | ✅ Validación de temperatura y humedad integrada con 4 sensores, RTC y microSD |
 | Buffer / ACK / retransmisión | ⏳ Pendiente |
 | Backend / Grafana real | ⏳ Pendiente de relevamiento |
 | Instalación final | ⏳ Pendiente |
@@ -89,6 +89,13 @@ timestamp,sensor,temperatura_C,humedad_RH,estado
 2026-10-05T19:21:05,S04,26.29,35.81,OK
 ```
 
+### Integración CRC + RTC respaldado + microSD — 2026-10-14
+
+Se validó en banco la integración de los cuatro NSHT30 con CRC-8 de temperatura y humedad, RTC y escritura reportada en microSD. Se modificó el circuito de carga del módulo RTC para usar una CR2032 no recargable y se comprobó que el reloj continuó avanzando durante un corte breve, con el ajuste automático desactivado. El archivo CSV no se releyó en esta prueba. La hora del RTC está en hora local de Argentina y requerirá conversión a UTC antes de generar timestamps Unix para InfluxDB.
+
+- [Sketch integrado con CRC, RTC y SD](firmware/pruebas/integracion_4sensores_crc_rtc_sd/integracion_4sensores_crc_rtc_sd.ino)
+- [Registro de prueba y modificación del RTC](docs/pruebas/2026-10-14_integracion_crc_rtc_sd_cr2032.md)
+
 ### Transmisión HTTP
 
 Se validó:
@@ -124,9 +131,9 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 1. Relevar con el grupo de investigación la infraestructura existente: datasource de Grafana, base de datos, forma de ingreso de datos, red disponible y responsable técnico.
 2. Confirmar si existe una API HTTP compatible; si existe, relevar endpoint, JSON esperado, autenticación y respuesta que confirma persistencia.
-3. Integrar la validación CRC-8 ya probada en cuatro NSHT30 al firmware de RTC y microSD.
+3. Construir una medición con timestamp Unix UTC y Line Protocol para InfluxDB, inicialmente sin transmisión.
 4. Definir manejo explícito de sensor sin respuesta, CRC inválido y fallas de almacenamiento/comunicación.
-5. Verificar retención del RTC con batería LIR2032.
+5. Realizar prueba prolongada de retención del RTC con CR2032 y verificar precisión temporal.
 6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
 7. Realizar contraste/caracterización de los NSHT30 con el instrumento de referencia.
 8. Caracterizar I2C con las longitudes y cableado reales de la instalación.
