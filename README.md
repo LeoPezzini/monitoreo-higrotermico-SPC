@@ -51,6 +51,7 @@ La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con
 | Wi-Fi ESP32 | ✅ 2.4 GHz validado |
 | HTTP POST / JSON | ✅ Medición real NSHT30 enviada a servidor de prueba; HTTP 200 y JSON recibido correctamente |
 | CRC-8 NSHT30 | ✅ Validación de temperatura y humedad integrada con 4 sensores, RTC y microSD |
+| Line Protocol InfluxDB y timestamp Unix UTC | ✅ 4 sensores, generación y relectura desde microSD validadas el 2026-10-14 |
 | Buffer / ACK / retransmisión | ⏳ Pendiente |
 | Backend / Grafana real | ⏳ Pendiente de relevamiento |
 | Instalación final | ⏳ Pendiente |
@@ -96,6 +97,13 @@ Se validó en banco la integración de los cuatro NSHT30 con CRC-8 de temperatur
 - [Sketch integrado con CRC, RTC y SD](firmware/pruebas/integracion_4sensores_crc_rtc_sd/integracion_4sensores_crc_rtc_sd.ino)
 - [Registro de prueba y modificación del RTC](docs/pruebas/2026-10-14_integracion_crc_rtc_sd_cr2032.md)
 
+### Integración local completa con Line Protocol — 2026-10-14
+
+Se validaron 41 ciclos y 164 registros por archivo con cuatro NSHT30, CRC-8, RTC y microSD. El firmware genera CSV y Line Protocol con timestamp Unix UTC en segundos, reabre los archivos y muestra su contenido por serie. No hay transmisión ni gestión de ACK implementadas todavía.
+
+- [Sketch de integración local](firmware/pruebas/integracion_local_4sensores_influx_lp/integracion_local_4sensores_influx_lp.ino)
+- [Registro de validación](docs/pruebas/2026-10-14_integracion_local_influx_lp.md)
+
 ### Transmisión HTTP
 
 Se validó:
@@ -131,7 +139,7 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 
 1. Relevar con el grupo de investigación la infraestructura existente: datasource de Grafana, base de datos, forma de ingreso de datos, red disponible y responsable técnico.
 2. Confirmar si existe una API HTTP compatible; si existe, relevar endpoint, JSON esperado, autenticación y respuesta que confirma persistencia.
-3. Construir una medición con timestamp Unix UTC y Line Protocol para InfluxDB, inicialmente sin transmisión.
+3. Coordinar con Fede una prueba HTTP POST a InfluxDB 2.x en red local: IP/hostname, puerto, organización, bucket de pruebas y token de solo escritura; usar `precision=s`.
 4. Definir manejo explícito de sensor sin respuesta, CRC inválido y fallas de almacenamiento/comunicación.
 5. Realizar prueba prolongada de retención del RTC con CR2032 y verificar precisión temporal.
 6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
