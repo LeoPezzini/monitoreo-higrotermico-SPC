@@ -44,3 +44,7 @@ Estado del sketch: **probado fisicamente, 20 ciclos correctos segun monitor seri
 ## Consulta de verificacion InfluxDB (captura 2026-10-15)
 
 Consulta Flux agrupada por sensor y campo, con count(): Data Explorer muestra **8 tablas / 8 filas**. En la primera pagina son visibles S01 humidity_rh=20, S01 temperature_c=20 y S02 humidity_rh=20. El resto de los conteos no es visible en la captura (hay paginacion); verificar las paginas 2 y 3 antes de afirmar que todos son 20. Esto corrobora la presencia de series almacenadas y los conteos visibles, no la entrega garantizada frente a cortes.
+
+## Verificacion final en Data Explorer — prueba cerrada (2026-10-15)
+
+Las capturas de las tres paginas de resultados Flux confirman ocho conteos de 20: S01, S02, S03 y S04, cada uno para temperature_c y humidity_rh. Total: 160 valores de campo, equivalentes a 80 puntos de medicion de dos campos cada uno. Coinciden con 20 ciclos x 4 sensores y 80 respuestas HTTP 204 observadas en el monitor serie. **Prueba de extremo a extremo validada** en banco. Siguen pendientes ensayos de desconexion/reenvio, deduplicacion y estabilidad prolongada.
