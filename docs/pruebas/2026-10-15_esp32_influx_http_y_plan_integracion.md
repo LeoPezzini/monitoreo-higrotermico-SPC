@@ -40,3 +40,7 @@ Prueba realizada por el usuario con ESP32 y cuatro NSHT30. Registro del monitor 
 - Las mediciones de humedad variaron en el ensayo; no se interpreta aun como calibracion o fenomeno del material.
 
 Estado del sketch: **probado fisicamente, 20 ciclos correctos segun monitor serie**. El archivo .lp sigue siendo historico, no una cola persistente de reenvio.
+
+## Consulta de verificacion InfluxDB (captura 2026-10-15)
+
+Consulta Flux agrupada por sensor y campo, con count(): Data Explorer muestra **8 tablas / 8 filas**. En la primera pagina son visibles S01 humidity_rh=20, S01 temperature_c=20 y S02 humidity_rh=20. El resto de los conteos no es visible en la captura (hay paginacion); verificar las paginas 2 y 3 antes de afirmar que todos son 20. Esto corrobora la presencia de series almacenadas y los conteos visibles, no la entrega garantizada frente a cortes.
