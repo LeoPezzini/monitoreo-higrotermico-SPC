@@ -121,6 +121,16 @@ Se probó un sketch independiente con los cuatro NSHT30 conectados a dos PCA9548
 - [Sketch de prueba CRC-8](firmware/pruebas/nsht30_crc8_4sensores/nsht30_crc8_4sensores.ino)
 - [Resultados y observaciones](docs/pruebas/2026-10-13_crc8_4sensores.md)
 
+### InfluxDB local y HTTP desde ESP32 — 2026-10-15
+
+En Windows 10 se inicio InfluxDB v2.7.0 sin Docker. Se verificaron escritura manual, consulta Flux y timestamp Unix en segundos. Python obtuvo HTTP 204 y el ESP32 realizo GET /health (200) y POST de una medicion TEST_ESP32 (204). Data Explorer recupero temperatura 25.5, humedad 55.2 y timestamp 2026-10-15T12:10:02Z.
+
+Se preparo una **nueva prueba integrada, aun no ejecutada**, de cuatro NSHT30 + CRC + RTC + microSD + HTTP POST. Realiza 20 ciclos aproximados cada 30 segundos (hasta 80 registros), con CSV y LP historicos locales, y log de respuestas HTTP. No implementa aun reenvio ni deduplicacion. Credenciales exclusivamente en secrets.h local, nunca en GitHub.
+
+- [Sketch integrado para probar](firmware/pruebas/integracion_4sensores_http_influx/integracion_4sensores_http_influx.ino)
+- [Plantilla de credenciales sin secretos](firmware/pruebas/integracion_4sensores_http_influx/secrets.example.h)
+- [Registro y protocolo de prueba](docs/pruebas/2026-10-15_esp32_influx_http_y_plan_integracion.md)
+
 ## Estrategia de confiabilidad
 
 ```text
