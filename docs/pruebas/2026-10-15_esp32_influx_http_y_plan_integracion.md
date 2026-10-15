@@ -1,6 +1,6 @@
 # Prueba integrada de cuatro sensores y HTTP a InfluxDB (2026-10-15)
 
-**Estado:** sketch preparado; **pendiente de compilacion y prueba fisica**. No confundir con pruebas ya validadas por separado.
+**Estado:** sketch compilado y probado fisicamente; 20 ciclos completos correctos segun monitor serie. Pendiente contrastar los 80 registros con Data Explorer.
 
 ## Validaciones previas
 - InfluxDB v2.7.0 local Windows 10: escritura manual y consulta Flux correctas.
@@ -26,3 +26,17 @@ En Data Explorer consultar measurement higrotermico y sensor S01 a S04, rango te
 
 ## Cadencia
 30 segundos para ensayo inicial; sugerencia de 5 minutos para monitoreo habitual, sujeto a definicion con catedra. Resolucion de panel Grafana no obliga a adquirir una sola vez por hora.
+
+
+## Resultado de prueba fisica integrada (2026-10-15)
+
+Prueba realizada por el usuario con ESP32 y cuatro NSHT30. Registro del monitor serie:
+- 20/20 ciclos completos desde 2026-10-15T09:20:28 hasta 09:29:59 hora Argentina; intervalos observados de ~30 s.
+- 4 sensores por ciclo: 80 lecturas validas y 80 escrituras CSV=OK y LP=OK informadas.
+- 80 solicitudes HTTP con respuesta **204 ACEPTADO**; ningun error I2C, CRC, SD o HTTP reportado.
+- IP del ESP32: 192.168.1.93; servidor InfluxDB local: 192.168.1.40:8086.
+- Timestamp Unix UTC inicial 1792066828 y final 1792067399.
+- **Pendiente:** consultar Data Explorer para confirmar las cuatro series y conteos almacenados. Aun no hay prueba de desconexion/reenvio, deduplicacion ni funcionamiento prolongado.
+- Las mediciones de humedad variaron en el ensayo; no se interpreta aun como calibracion o fenomeno del material.
+
+Estado del sketch: **probado fisicamente, 20 ciclos correctos segun monitor serie**. El archivo .lp sigue siendo historico, no una cola persistente de reenvio.
