@@ -48,3 +48,23 @@ Consulta Flux agrupada por sensor y campo, con count(): Data Explorer muestra **
 ## Verificacion final en Data Explorer — prueba cerrada (2026-10-15)
 
 Las capturas de las tres paginas de resultados Flux confirman ocho conteos de 20: S01, S02, S03 y S04, cada uno para temperature_c y humidity_rh. Total: 160 valores de campo, equivalentes a 80 puntos de medicion de dos campos cada uno. Coinciden con 20 ciclos x 4 sensores y 80 respuestas HTTP 204 observadas en el monitor serie. **Prueba de extremo a extremo validada** en banco. Siguen pendientes ensayos de desconexion/reenvio, deduplicacion y estabilidad prolongada.
+
+
+## Ensayo de caida y recuperacion del servidor — 2026-10-15
+
+Se reinicio la prueba de 20 ciclos manteniendo ESP32, sensores, RTC y microSD encendidos. Se detuvo `influxd.exe` desde PowerShell y luego se volvio a iniciar, sin reiniciar el ESP32.
+
+**Evidencia de monitor serie:**
+- Ciclo 5/20, 2026-10-15T09:56:33 (Unix UTC 1792068993): S01, S02, S03 y S04 mostraron `CSV=OK | LP=OK` y `HTTP: -1 | NO CONFIRMADO`. El servidor estaba detenido.
+- Ciclo 11/20, 2026-10-15T09:59:33 (Unix UTC 1792069173): los cuatro sensores mostraron `CSV=OK | LP=OK` y `HTTP: 204 | ACEPTADO` tras reiniciar el servidor.
+
+**Inspeccion del archivo microSD `mediciones_http.csv` aportado por el usuario:**
+- Encabezado: `timestamp_local,sensor,temperatura_C,humedad_RH,estado`.
+- 160 filas de datos, correspondientes a dos ejecuciones de 20 ciclos con cuatro sensores cada una; cada timestamp de ciclo tiene S01, S02, S03 y S04.
+- Se encuentran las cuatro filas del ciclo 5 a las 09:56:33: S01 (22.07 C, 50.54 %), S02 (22.10 C, 51.00 %), S03 (22.42 C, 51.44 %), S04 (22.51 C, 48.62 %).
+- El CSV sigue conteniendo datos hasta 2026-10-15T10:04:03.
+- El archivo CSV verifica persistencia local de las mediciones, **no** el estado de entrega remota. Los registros durante la caida no se reenvian con el firmware actual.
+
+**Conclusion:** comprobado respaldo local durante indisponibilidad de InfluxDB y reanudacion de envios nuevos sin reiniciar el ESP32. Aun pendiente: implementar cola persistente de reenvio, confirmacion duradera, tratamiento idempotente y ensayo de recuperacion de pendientes. Mantener el sketch validado sin cambios; desarrollar el mecanismo en una nueva version.
+
+**Proximo paso:** disenar estado de entrega persistente en SD y mecanismo de reenvio incremental. Probar nueva caida controlada y comparar conteos de InfluxDB con registros SD.
