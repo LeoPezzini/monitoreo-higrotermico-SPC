@@ -52,8 +52,8 @@ La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con
 | HTTP POST / JSON | ✅ Medición real NSHT30 enviada a servidor de prueba; HTTP 200 y JSON recibido correctamente |
 | CRC-8 NSHT30 | ✅ Validación de temperatura y humedad integrada con 4 sensores, RTC y microSD |
 | Line Protocol InfluxDB y timestamp Unix UTC | ✅ 4 sensores, generación y relectura desde microSD validadas el 2026-10-14 |
-| Buffer / ACK / retransmisión | ⏳ Pendiente |
-| Backend / Grafana real | ⏳ Pendiente de relevamiento |
+| Buffer / ACK / retransmisión | ✅ Validado en banco: cola SD, ACK persistente, reintento HTTP 204 y recuperación tras reinicio (19/10/2026) |
+| InfluxDB / Grafana local | ✅ InfluxDB 2.7 local y dashboard de cuatro sensores verificados; migración al laboratorio pendiente |
 | Instalación final | ⏳ Pendiente |
 
 ## Pruebas validadas destacadas
@@ -145,6 +145,14 @@ medir -> validar -> timestamp -> guardar localmente -> transmitir
 
 Un registro no se considerará entregado hasta contar con confirmación suficiente de su persistencia en el sistema remoto. El mecanismo definitivo de confirmación, reintento y deduplicación se definirá junto con el protocolo de comunicación y el backend.
 
+### Cola persistente y visualización local — 2026-10-19
+
+Se verificó un firmware de banco con cuatro NSHT30, CRC-8, RTC, CSV y Line Protocol en microSD, cola append-only, diario de ACK persistente y reenvío a InfluxDB 2.7 local. El equipo obtuvo HTTP 204 en escrituras aceptadas, conservó el registro #89 pendiente durante fallos HTTP -1 y posteriormente lo retransmitió junto con otros pendientes (#89 a #96). Tras reiniciar, recuperó el cursor de confirmación de la microSD. Grafana mostró las cuatro series de temperatura y humedad relativa.
+
+**Alcance:** esta prueba no demuestra deduplicación exactamente-una-vez en todas las condiciones: una caída entre el HTTP 204 y la escritura local del ACK puede provocar reenvío. La cola y el diario crecen sin compactación; se requiere una política de retención y recuperación ante archivos dañados. El endpoint y credenciales corresponden al banco local, no al servidor del laboratorio. El firmware exacto de reenvío debe archivarse por separado sin secretos.
+
+- [Registro de prueba del 19/10 y observaciones](docs/pruebas/2026-10-19_cola_ack_reenvio_grafana.md)
+
 ## Próximos pasos
 
 1. Relevar con el grupo de investigación la infraestructura existente: datasource de Grafana, base de datos, forma de ingreso de datos, red disponible y responsable técnico.
@@ -155,6 +163,6 @@ Un registro no se considerará entregado hasta contar con confirmación suficien
 6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
 7. Realizar contraste/caracterización de los NSHT30 con el instrumento de referencia.
 8. Caracterizar I2C con las longitudes y cableado reales de la instalación.
-9. Implementar buffer de pendientes, confirmación, retransmisión y deduplicación según el backend definitivo.
+9. Adaptar el buffer/ACK validado en banco al backend definitivo; definir deduplicación, recuperación ante cortes y compactación de archivos.
 10. Probar Wi-Fi y acceso al servidor desde la casilla de ensayo.
 11. Realizar pruebas de fallas, ensayo prolongado y montaje definitivo.
