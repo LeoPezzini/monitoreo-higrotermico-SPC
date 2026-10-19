@@ -27,7 +27,7 @@ HTTP 204 confirma aceptación de escritura por InfluxDB; el diario local marca e
 
 El sketch no compacta la cola ni el diario; `recuperarACK()` recorre todo el log y `reenviarPendientes()` recorre la cola desde el principio en cada pasada. Antes de producción se requiere estrategia de tamaño, integridad y recuperación de SD, identificación de fallas, estabilidad prolongada, configuración horaria y protección de credenciales.
 
-## Para migrar con Fede
+## Para migrar con la persona responsable del servidor
 
 Confirmar red y acceso desde ESP32, endpoint de escritura, organización y bucket, token de alcance mínimo, retención, esquema de measurement/tags/fields, precisión temporal en segundos, datasource de Grafana, política de deduplicación, respaldo y recuperación. La prueba local no modifica ni valida por sí misma el servidor del laboratorio.
 
