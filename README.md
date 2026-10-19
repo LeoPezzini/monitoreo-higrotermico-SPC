@@ -157,7 +157,7 @@ Se verificó un firmware de banco con cuatro NSHT30, CRC-8, RTC, CSV y Line Prot
 
 1. Relevar con el grupo de investigación la infraestructura existente: datasource de Grafana, base de datos, forma de ingreso de datos, red disponible y responsable técnico.
 2. Confirmar si existe una API HTTP compatible; si existe, relevar endpoint, JSON esperado, autenticación y respuesta que confirma persistencia.
-3. Coordinar con Fede una prueba HTTP POST a InfluxDB 2.x en red local: IP/hostname, puerto, organización, bucket de pruebas y token de solo escritura; usar `precision=s`.
+3. Coordinar con la persona responsable del servidor una prueba HTTP POST a InfluxDB 2.x en red local: IP/hostname, puerto, organización, bucket de pruebas y token de solo escritura; usar `precision=s`.
 4. Definir manejo explícito de sensor sin respuesta, CRC inválido y fallas de almacenamiento/comunicación.
 5. Realizar prueba prolongada de retención del RTC con CR2032 y verificar precisión temporal.
 6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
