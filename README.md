@@ -30,8 +30,6 @@ La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con
 - ESP32 DevKit / ESP-WROOM-32
 - 20 x NSHT30 disponibles (14 previstos actualmente para la instalación; 6 de reserva)
 - 2 x PCA9548A nuevos verificados y funcionando simultáneamente en `0x70` y `0x71`
-- 1 x TCA9548A previamente verificado, disponible como repuesto
-- 1 x módulo TCA/PCA anterior no funcional
 - RTC HW-084 / DS3231M
 - módulo microSD HW-203
 - placas preperforadas, fuente y elementos de montaje
