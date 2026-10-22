@@ -23,7 +23,7 @@ NSHT30 x 14 -> PCA9548A x 2 -> ESP32 -> Wi-Fi -> servidor / BD -> Grafana
                                   |-> microSD (buffer local)
 ```
 
-La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con una medición real. HTTP queda como alternativa preferente si la infraestructura existente del grupo dispone de una API compatible. El backend y mecanismo definitivos se decidirán después del relevamiento de la instalación existente.
+La arquitectura HTTP quedó validada con un receptor Python en Docker que reenvía Line Protocol a InfluxDB 2.7. El 22/10/2026 se verificó el envío directo desde el ESP32 al servidor Ubuntu del laboratorio, con visualización en Grafana. El despliegue permanente y el escalado siguen pendientes.
 
 ## Hardware disponible
 
@@ -51,7 +51,7 @@ La transmisión por Wi-Fi mediante HTTP POST y JSON ya fue validada en banco con
 | CRC-8 NSHT30 | ✅ Validación de temperatura y humedad integrada con 4 sensores, RTC y microSD |
 | Line Protocol InfluxDB y timestamp Unix UTC | ✅ 4 sensores, generación y relectura desde microSD validadas el 2026-10-14 |
 | Buffer / ACK / retransmisión | ✅ Validado en banco: cola SD, ACK persistente, reintento HTTP 204 y recuperación tras reinicio (19/10/2026) |
-| InfluxDB / Grafana local | ✅ InfluxDB 2.7 local y dashboard de cuatro sensores verificados; migración al laboratorio pendiente |
+| InfluxDB / Grafana local | ✅ Cuatro sensores y ocho series verificadas en el banco |\n| Receptor Docker (notebook) | ✅ POST/204, caída del receptor y recuperación de cola tras reinicio del ESP32 (21/10/2026) |\n| Receptor Docker (Ubuntu laboratorio) | ✅ Imagen construida, red `iot_net`, POST/204 desde ESP32 y visualización en Grafana (22/10/2026) |
 | Instalación final | ⏳ Pendiente |
 
 ## Pruebas validadas destacadas
@@ -151,11 +151,20 @@ Se verificó un firmware de banco con cuatro NSHT30, CRC-8, RTC, CSV y Line Prot
 
 - [Registro de prueba del 19/10 y observaciones](docs/pruebas/2026-10-19_cola_ack_reenvio_grafana.md)
 
+## Receptor Docker y validación en el laboratorio — 21 y 22/10/2026
+
+Se implementó un receptor HTTP Python en Docker (puerto 8080) que recibe Line Protocol del ESP32, añade el token desde el entorno del servidor y reenvía a InfluxDB 2.7. Se validaron la escritura HTTP 204, la cola microSD y el ACK persistente ante caída del receptor y reinicio del ESP32. El 22/10 se instaló el receptor en el servidor Ubuntu del laboratorio, conectado a la red Docker `iot_net`, y se observaron solicitudes reales del ESP32 con HTTP 204 y datos en Grafana.
+
+Una consulta sobre un intervalo de 15 minutos devolvió 26 registros de temperatura por cada sensor S01–S04 y 26 de humedad por cada uno. **Esto no demuestra ausencia total de duplicados** ni entrega exactamente una vez. El receptor de prueba tampoco autentica al cliente ni realiza almacenamiento local.
+
+- [Registro de ensayos y limitaciones](docs/pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
+- [Código y procedimiento del receptor Docker](servidor/receptor-spc/README.md)
+
 ## Próximos pasos
 
-1. Relevar con el grupo de investigación la infraestructura existente: datasource de Grafana, base de datos, forma de ingreso de datos, red disponible y responsable técnico.
-2. Confirmar si existe una API HTTP compatible; si existe, relevar endpoint, JSON esperado, autenticación y respuesta que confirma persistencia.
-3. Coordinar con la persona responsable del servidor una prueba HTTP POST a InfluxDB 2.x en red local: IP/hostname, puerto, organización, bucket de pruebas y token de solo escritura; usar `precision=s`.
+1. Documentar el despliegue definitivo del receptor en Ubuntu, acceso autorizado al puerto 8080 y dirección estable del servidor.
+2. Definir autenticación/restricción de acceso al receptor, política de duplicados, retención y compactación de cola/ACK.
+3. Realizar ensayos de recuperación ante cortes de alimentación y reinicio completo del servidor; medir continuidad y consistencia temporal.
 4. Definir manejo explícito de sensor sin respuesta, CRC inválido y fallas de almacenamiento/comunicación.
 5. Realizar prueba prolongada de retención del RTC con CR2032 y verificar precisión temporal.
 6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
