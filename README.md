@@ -178,6 +178,7 @@ Una consulta sobre un intervalo de 15 minutos devolvió 26 registros de temperat
 ## Documentación principal
 
 - [Arquitectura técnica actualizada](docs/arquitectura/arquitectura-sistema.md)
+- [Auditoría de repositorio y brechas pendientes (28/10)](docs/auditoria-repositorio-2026-10-28.md)
 - [Registro de decisiones DEC-001 a DEC-019](docs/decisiones/decision-log.md)
 - [Validación Docker, recuperación y Ubuntu (21–22/10)](docs/pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
 - [Operación del receptor Python](servidor/receptor-spc/README.md)
