@@ -15,20 +15,25 @@ Desarrollar un sistema autónomo y confiable capaz de:
 - conservar registros pendientes ante pérdidas de conectividad y retransmitirlos al recuperar la comunicación;
 - detectar sensores sin respuesta y otras fallas previsibles.
 
-## Arquitectura prevista
+## Arquitectura integrada (cuatro sensores validados)
 
 ```text
-NSHT30 x 14 -> PCA9548A x 2 -> ESP32 -> Wi-Fi -> servidor / BD -> Grafana
-                                  |-> RTC
-                                  |-> microSD (buffer local)
+NSHT30 (4 en banco; ~11 previstos, a confirmar) -> PCA9548A x 2 -> ESP32
+                                                               |-> RTC DS3231M
+                                                               |-> microSD (CSV, LP, cola y ACK)
+                                                               +-> Wi-Fi / HTTP POST :8080
+                                                                   -> receptor Python en Docker
+                                                                   -> InfluxDB 2.7 :8086 -> Grafana
 ```
+
+[Arquitectura técnica, conexiones y límites de validación](docs/arquitectura/arquitectura-sistema.md).
 
 La arquitectura HTTP quedó validada con un receptor Python en Docker que reenvía Line Protocol a InfluxDB 2.7. El 22/10/2026 se verificó el envío directo desde el ESP32 al servidor Ubuntu del laboratorio, con visualización en Grafana. El despliegue permanente y el escalado siguen pendientes.
 
 ## Hardware disponible
 
 - ESP32 DevKit / ESP-WROOM-32
-- 20 x NSHT30 disponibles (14 previstos actualmente para la instalación; 6 de reserva)
+- 20 x NSHT30 disponibles (estimación actual: ~11 para instalación y ~9 de reserva; cantidad y posiciones por confirmar)
 - 2 x PCA9548A nuevos verificados y funcionando simultáneamente en `0x70` y `0x71`
 - RTC HW-084 / DS3231M
 - módulo microSD HW-203
@@ -52,7 +57,6 @@ La arquitectura HTTP quedó validada con un receptor Python en Docker que reenv�
 | Line Protocol InfluxDB y timestamp Unix UTC | ✅ 4 sensores, generación y relectura desde microSD validadas el 2026-10-14 |
 | Buffer / ACK / retransmisión | ✅ Validado en banco: cola SD, ACK persistente, reintento HTTP 204 y recuperación tras reinicio (19/10/2026) |
 | InfluxDB / Grafana local | ✅ Cuatro sensores y ocho series verificadas en el banco |\n| Receptor Docker (notebook) | ✅ POST/204, caída del receptor y recuperación de cola tras reinicio del ESP32 (21/10/2026) |\n| Receptor Docker (Ubuntu laboratorio) | ✅ Imagen construida, red `iot_net`, POST/204 desde ESP32 y visualización en Grafana (22/10/2026) |
-| Instalación final | ⏳ Pendiente |
 
 ## Pruebas validadas destacadas
 
@@ -141,13 +145,13 @@ medir -> validar -> timestamp -> guardar localmente -> transmitir
                                  retransmitir
 ```
 
-Un registro no se considerará entregado hasta contar con confirmación suficiente de su persistencia en el sistema remoto. El mecanismo definitivo de confirmación, reintento y deduplicación se definirá junto con el protocolo de comunicación y el backend.
+Un registro no se considerará entregado hasta contar con confirmación suficiente de su persistencia en el sistema remoto. La cola y el ACK persistentes están implementados y validados en banco; no hay garantía demostrada de entrega exactamente una vez. Quedan pendientes deduplicación, compactación, ensayos de corrupción y operación prolongada. El firmware histórico publicado corresponde a conexión directa con InfluxDB y no debe confundirse con el binario probado contra el receptor Docker.
 
 ### Cola persistente y visualización local — 2026-10-19
 
 Se verificó un firmware de banco con cuatro NSHT30, CRC-8, RTC, CSV y Line Protocol en microSD, cola append-only, diario de ACK persistente y reenvío a InfluxDB 2.7 local. El equipo obtuvo HTTP 204 en escrituras aceptadas, conservó el registro #89 pendiente durante fallos HTTP -1 y posteriormente lo retransmitió junto con otros pendientes (#89 a #96). Tras reiniciar, recuperó el cursor de confirmación de la microSD. Grafana mostró las cuatro series de temperatura y humedad relativa.
 
-**Alcance:** esta prueba no demuestra deduplicación exactamente-una-vez en todas las condiciones: una caída entre el HTTP 204 y la escritura local del ACK puede provocar reenvío. La cola y el diario crecen sin compactación; se requiere una política de retención y recuperación ante archivos dañados. El endpoint y credenciales corresponden al banco local, no al servidor del laboratorio. El firmware exacto de reenvío debe archivarse por separado sin secretos.
+**Alcance:** esta prueba no demuestra deduplicación exactamente-una-vez en todas las condiciones: una caída entre el HTTP 204 y la escritura local del ACK puede provocar reenvío. La cola y el diario crecen sin compactación; se requiere una política de retención y recuperación ante archivos dañados. El endpoint y credenciales corresponden al banco local, no al servidor del laboratorio. La versión exacta compilada para la prueba con receptor Docker debe archivarse por separado sin secretos.
 
 - [Registro de prueba del 19/10 y observaciones](docs/pruebas/2026-10-19_cola_ack_reenvio_grafana.md)
 
@@ -162,14 +166,18 @@ Una consulta sobre un intervalo de 15 minutos devolvió 26 registros de temperat
 
 ## Próximos pasos
 
-1. Documentar el despliegue definitivo del receptor en Ubuntu, acceso autorizado al puerto 8080 y dirección estable del servidor.
-2. Definir autenticación/restricción de acceso al receptor, política de duplicados, retención y compactación de cola/ACK.
-3. Realizar ensayos de recuperación ante cortes de alimentación y reinicio completo del servidor; medir continuidad y consistencia temporal.
-4. Definir manejo explícito de sensor sin respuesta, CRC inválido y fallas de almacenamiento/comunicación.
-5. Realizar prueba prolongada de retención del RTC con CR2032 y verificar precisión temporal.
-6. Escalar la adquisición desde 4 hasta los 14 sensores previstos.
-7. Realizar contraste/caracterización de los NSHT30 con el instrumento de referencia.
-8. Caracterizar I2C con las longitudes y cableado reales de la instalación.
-9. Adaptar el buffer/ACK validado en banco al backend definitivo; definir deduplicación, recuperación ante cortes y compactación de archivos.
-10. Probar Wi-Fi y acceso al servidor desde la casilla de ensayo.
-11. Realizar pruebas de fallas, ensayo prolongado y montaje definitivo.
+1. Confirmar número y posición final de sensores (estimación actual: ~11) con la responsable del ensayo.
+2. Ensayar cable blindado real, longitud, I²C, CRC y protección de módulos; escalar de 4 sensores al número confirmado.
+3. Probar UPS de 5 V, regulador 3,3 V, alimentación, autonomía y cortes; documentar conexiones en KiCad.
+4. Identificar y caracterizar los 20 NSHT30 frente a referencia, con repuestos trazables.
+5. Archivar y comentar el firmware exacto para receptor Docker, sin credenciales de InfluxDB en el ESP32; definir funcionamiento continuo y diagnóstico de fallas.
+6. Verificar SD llena/dañada, compactación de cola/ACK, duplicados, reinicios y funcionamiento prolongado.
+7. Coordinar con Fede despliegue estable, control de acceso al puerto 8080 y dirección del servidor; no modificar otros contenedores.
+8. Documentar con fotos, capturas, logs y pruebas reproducibles el montaje y la validación final.
+
+## Documentación principal
+
+- [Arquitectura técnica actualizada](docs/arquitectura/arquitectura-sistema.md)
+- [Registro de decisiones DEC-001 a DEC-019](docs/decisiones/decision-log.md)
+- [Validación Docker, recuperación y Ubuntu (21–22/10)](docs/pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
+- [Operación del receptor Python](servidor/receptor-spc/README.md)
