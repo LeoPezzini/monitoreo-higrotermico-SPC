@@ -1,6 +1,6 @@
 # Receptor SPC — Docker / InfluxDB 2.x
 
-Copia documentada del receptor Python probado en notebook Windows (21/10/2026) y en Ubuntu del laboratorio (22/10/2026). El archivo `receptor_spc.py` corresponde a la versión funcional compartida durante las pruebas; el Dockerfile de este directorio es una receta reproducible equivalente a la construcción probada.
+Implementación de referencia documentada a partir del comportamiento funcional validado en notebook Windows (21/10/2026) y Ubuntu del laboratorio (22/10/2026). **No está verificado que este archivo sea idéntico, byte por byte, al script que quedó en `~/spc-receptor` del Ubuntu.** Antes de sustituir un despliegue operativo, comparar ambos scripts y el Dockerfile con Fede. No se modifica el contenedor existente desde este repositorio.
 
 ## Función
 `ESP32 -> POST /api/v2/write :8080 -> receptor Python -> InfluxDB :8086`
