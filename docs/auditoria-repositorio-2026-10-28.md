@@ -54,3 +54,7 @@ Recuperar o repetir capturas originales del monitor serie (CRC, CSV/SD, HTTP -1/
 ## Criterio de cierre
 
 La documentación queda alineada con lo que **se ha comprobado hasta el 22/10** y con las decisiones de diseño comunicadas hasta el 28/10. La instalación definitiva y su robustez todavía requieren validación física y evidencia reproducible.
+
+## Firmware de validación recuperado (29/10/2026)
+
+El usuario aportó `Migracion_funciona.ino` como versión cargada en el ESP32 durante la última prueba de laboratorio. Se archivó una copia reconstruida desde el sketch histórico de reenvío, con el endpoint del archivo aportado, en [`firmware/pruebas/validacion_receptor_ubuntu_2026_10_22/validacion_receptor_ubuntu_4sensores.ino`](../firmware/pruebas/validacion_receptor_ubuntu_2026_10_22/validacion_receptor_ubuntu_4sensores.ino). La copia se debe contrastar byte a byte con el adjunto original antes de declararla idéntica. El código sigue incluyendo cabecera `Authorization` con `INFLUX_TOKEN` de `secrets.h`, y `MAX_CICLOS=20`; preservar como versión de ensayo, no como firmware definitivo. No se publican credenciales reales.
