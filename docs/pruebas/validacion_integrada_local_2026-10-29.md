@@ -39,3 +39,16 @@ Las fotos del montaje, la OLED y las capturas del monitor serie fueron tomadas y
 
 ## Próxima validación
 Inspección de CSV/LP y contraste con capturas, seguido de diseño de distribución física de módulos y alimentación.
+
+## Verificación posterior de archivos extraídos de la microSD
+
+Se recibieron y cotejaron los archivos reales `prueba_local_spc.csv` y `prueba_local_spc.lp`. Resultados:
+
+- 128 filas de mediciones en CSV y 128 líneas LP; 32 ciclos distintos y 32 mediciones por cada uno de los cuatro sensores.
+- Correspondencia completa **128/128** entre sensor, temperatura, humedad y timestamp (CSV local Argentina UTC−3, LP Unix UTC); cero discrepancias.
+- Los 128 registros CSV tienen estado `OK`; no se encontraron claves duplicadas de sensor + timestamp.
+- Entre ciclos: 29 intervalos de 30 s, uno de 31 s y un intervalo de 304 s entre la primera ejecución (12 ciclos, 48 registros) y la segunda (20 ciclos, 80 registros).
+- Promedios sobre los 32 ciclos: S01 25,31 °C / 36,67 % HR; S02 25,22 °C / 37,29 % HR; S03 25,18 °C / 40,43 % HR; S04 24,99 °C / 36,94 % HR.
+- Se observó aumento de temperatura a lo largo de la sesión. El usuario informó haber apagado el aire acondicionado que incidía sobre los sensores; posible explicación, no demostrada experimentalmente.
+
+**Conclusión:** integridad y coherencia entre los dos formatos de archivo verificadas para los registros recuperados. No se infiere resistencia a cortes eléctricos ni estabilidad de largo plazo.
