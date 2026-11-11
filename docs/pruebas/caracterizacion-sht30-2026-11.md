@@ -35,3 +35,6 @@ Dos series de 501 ciclos con 15 sensores SHT30 activos (S01–S15); S16 deshabil
 - Humedad: NO aplicar offset absoluto ni presentar el promedio del grupo como patrón. Solo comparar consistencia relativa y registrar limitación.
 - Firmware: mantener mapeo físico de IDs; no renumerar sin tabla de correspondencias. Cambiar selección de canales únicamente después de confirmar los 12 sensores instalados.
 - Próximos ensayos independientes: transmisión al receptor y prueba de cable I2C de 2 metros; no son parte de la caracterización metrológica.
+
+## Evidencia visual del monitor serie (segunda serie)
+Captura proporcionada por el equipo al finalizar ciclo 500. Se observa: 15/15 sensores activos OK, S16 deshabilitado, errores MUX 0x70 = 0, MUX 0x71 = 0, sensor = 0, datos = 0, CRC8 = 0; archivo /MED0007.CSV, 8000 filas escritas a ese instante y 0 errores SD. La captura original se conserva en la carpeta local de evidencias SPC/Caracterización; su imagen todavía no se ha incorporado como archivo binario al repositorio.
