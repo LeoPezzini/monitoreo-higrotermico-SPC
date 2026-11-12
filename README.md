@@ -3,6 +3,7 @@
 > **Estado mas reciente:** se valido en banco la cadena **ESP32 (12 SHT30 + RTC + microSD) → receptor HTTP v2 (CRC16 + SQLite) → sincronizador → InfluxDB 2.7 → Grafana 12.3.0**, con ensayos de errores, duplicados, caida/recuperacion y visualizacion. **Montaje definitivo, UPS, Wireshark y equivalencia exhaustiva SQLite/InfluxDB pendientes.** La documentacion historica mas abajo describe prototipos anteriores de cuatro sensores.
 
 - [Registro detallado de pruebas 11–12/11](docs/pruebas/validacion-integrada-12-sht30-2026-11-12.md)
+- [Firmware integrado de 12 sensores y plantilla de secretos](firmware/integrado_12sht30_spc_v2/README.md)
 - [Codigo y despliegue receptor v2, sincronizador, Compose y pruebas](servidor/receptor-spc-v2/README.md)
 - [Caracterizacion individual SHT30](docs/pruebas/caracterizacion-sht30-2026-11.md)
 
