@@ -1,5 +1,7 @@
 # Registro de decisiones
 
+> **Vigencia 12/11/2026:** DEC-001 a DEC-019 son antecedentes; para la configuracion actual de doce sensores y backend v2 consultar DEC-020 a DEC-024 mas abajo. Las referencias a 4/11 sensores y receptor que escribe directo a InfluxDB son historicas, no el estado actual.
+
 ## DEC-001 — microSD como buffer local
 **Estado:** implementada y validada en banco (19–22/10/2026).
 
@@ -101,3 +103,37 @@ Se planifica una UPS de salida nominal 5 V con portabaterías y un regulador de 
 - [Line Protocol local](../pruebas/2026-10-14_integracion_local_influx_lp.md)
 - [Cola, ACK y Grafana](../pruebas/2026-10-19_cola_ack_reenvio_grafana.md)
 - [Receptor Docker, recuperación y Ubuntu](../pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
+
+
+## DEC-020 — Receptor v2 con CRC16 y SQLite persistente (12/11/2026)
+**Estado: implementada y validada en banco.** Sustituye el receptor sin persistencia descripto en DEC-011 para el sistema nuevo.
+
+ESP32 envia POST /api/v2/write con X-SPC-ID y X-SPC-CRC16. CRC16-CCITT-FALSE (0x1021, init 0xFFFF) sobre ID UTF-8 + LF + cuerpo Line Protocol exacto. El receptor almacena en SQLite con ID unico, da HTTP 204 para nuevo o duplicado identico, 422 para CRC incorrecto y 409 para mismo ID con otro contenido. Ensayos HTTP y consulta SQLite ejecutados el 12/11. El ACK del receptor confirma **SQLite**, no InfluxDB. El receptor opera en el host Windows :8081 -> Docker :8080, volumen spc-mediciones en /datos.
+
+## DEC-021 — Sincronizador persistente a InfluxDB
+**Estado: validada funcionalmente en banco 12/11/2026.**
+
+Servicio independiente que lee SQLite, transmite lotes LP a InfluxDB 2.7 y guarda estado persistente de IDs enviados. Tras detener InfluxDB se observaron errores PENDIENTE / REINTENTO y, al reiniciarlo, 96 mediciones aceptadas en lotes de 84+2+8+2 y continuidad posterior. Pendiente comparacion exhaustiva SQLite/InfluxDB y ensayo de reinicio del estado del sincronizador. La recuperacion funcional no demuestra exactly-once.
+
+## DEC-022 — Distribucion definitiva por multiplexor exterior/interior
+**Estado: direccionamiento en firmware confirmado; montaje electrico final y ubicacion por placa pendientes de ensayo.**
+
+- Exterior: A0=A1=A2=GND => direccion **0x70**. Cinco sensores: S01 CH2, S02 CH3, S03 CH4, S04 CH5, S05 CH6.
+- Interior: A0=3,3 V, A1=A2=GND => direccion **0x71**. Siete sensores: S07 CH0, S08 CH1, S09 CH2, S10 CH3, S11 CH4, S14 CH5, S15 CH6.
+- I2C SHT30 GPIO21 SDA/GPIO22 SCL a 100 kHz. RTC bus separado GPIO17 SDA/GPIO16 SCL. microSD SCK14/MISO27/MOSI13/CS26.
+- Verificar orden mecanico del conector, VCC/GND y continuidad con multimetro. Un cable de 2 m probo 200/200 lecturas sin error; no se ha validado aun todo el cableado final.
+
+## DEC-023 — InfluxDB y Grafana con credenciales de minimo privilegio
+**Estado: implementada y validada en banco 12/11/2026.**
+
+InfluxDB 2.7 (bucket higrotermia, organizacion SPC) y Grafana 12.3.0 se ejecutan en Docker con volumenes persistentes. El sincronizador usa token de escritura, Grafana uno diferente de solo lectura. Se mostraron 12 curvas de temperatura y 12 de humedad. Los secretos se mantienen fuera de Git. Pendiente instalacion en servidor definitivo, segmentacion/red y endurecimiento del endpoint HTTP sin TLS ni autenticacion de cliente.
+
+## DEC-024 — Caracterizacion y pruebas integradas, con limites
+**Estado: validaciones de banco completadas hasta 12/11/2026.**
+
+Se caracterizaron sensores SHT30 frente a referencia en noviembre (ver registro); no equivalen a calibracion formal de humedad. En un punto de control SQLite mostro 3546 secuencias unicas consecutivas 1..3546 sin faltantes. InfluxDB mostro conteo historico de 297 puntos para once sensores y 291 para S08; en ventana reciente de 30 min, 56 por sensor en los doce. La diferencia historica no esta explicada; los conteos InfluxDB no son directamente equiparables a IDs SQLite. Quedan pendientes Wireshark, UPS, cableado definitivo, etiquetado formal de placas y ensayo de fin de semana.
+
+## Referencias actuales
+- [Validacion integral 11–12/11](../pruebas/validacion-integrada-12-sht30-2026-11-12.md)
+- [Firmware doce sensores](../../firmware/integrado_12sht30_spc_v2/README.md)
+- [Backend v2 y migracion Docker](../../servidor/receptor-spc-v2/README.md)
