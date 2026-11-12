@@ -14,3 +14,7 @@ data/
 # Credenciales
 secrets.h
 .env
+
+# Configuracion local del sincronizador
+.env.spc
+**/.env.spc
