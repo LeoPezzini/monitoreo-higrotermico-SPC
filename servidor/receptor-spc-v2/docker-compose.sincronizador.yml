@@ -1,0 +1,22 @@
+services:
+  sincronizador:
+    image: python:3.12-alpine
+    container_name: spc-sincronizador
+    command: ["python", "-u", "/app/sincronizar_influx_spc.py"]
+    env_file:
+      - .env.spc
+    environment:
+      SPC_SOURCE_DB: /datos/spc_v2.sqlite3
+      SPC_SYNC_DB: /estado/sync.sqlite3
+      INFLUX_URL: http://host.docker.internal:8086
+      SPC_SYNC_INTERVAL: "5"
+      SPC_SYNC_BATCH: "100"
+    volumes:
+      - spc-mediciones:/datos:ro
+      - spc-sync-state:/estado
+      - ./sincronizar_influx_spc.py:/app/sincronizar_influx_spc.py:ro
+    restart: unless-stopped
+volumes:
+  spc-mediciones:
+    external: true
+  spc-sync-state:
