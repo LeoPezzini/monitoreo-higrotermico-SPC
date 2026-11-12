@@ -1,0 +1,16 @@
+services:
+  receptor:
+    build: .
+    image: receptor-spc:local-v2
+    container_name: receptor-spc-v2
+    ports:
+      - "8081:8080"
+    volumes:
+      - spc-mediciones:/datos
+    environment:
+      SPC_DB_FILE: /datos/spc_v2.sqlite3
+      PORT: "8080"
+    restart: unless-stopped
+volumes:
+  spc-mediciones:
+    name: spc-mediciones
