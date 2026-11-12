@@ -1,0 +1,26 @@
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: spc-influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - spc-influxdb-data:/var/lib/influxdb2
+      - spc-influxdb-config:/etc/influxdb2
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.3.0
+    container_name: spc-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - spc-grafana-data:/var/lib/grafana
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
+volumes:
+  spc-influxdb-data:
+  spc-influxdb-config:
+  spc-grafana-data:
