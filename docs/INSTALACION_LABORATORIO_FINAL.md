@@ -27,7 +27,7 @@ El tag Influx `sensor` mantiene ese nombre de campo por compatibilidad, pero **s
 
 ## Procedimiento de instalación limpia
 
-1. Con Fede, entrar por Termius o SSH nativo (`ssh USUARIO@IP`) e inventariar: `docker ps -a`, `docker volume ls`, `docker compose version`. No presuponer que la IP doméstica 192.168.1.52 sirve en laboratorio.
+1. Usando Termius o SSH nativo (`ssh USUARIO@IP`) inventariar: `docker ps -a`, `docker volume ls`, `docker compose version`. No presuponer que la IP doméstica 192.168.1.52 sirve en laboratorio.
 2. Respaldar en la notebook CSV y cola microSD, dashboards JSON y evidencia de las pruebas.
 3. En el servidor **ya hay bucket y dashboards de prueba**: borrar únicamente esos recursos del proyecto tras respaldo; no eliminar otros datos de InfluxDB/Grafana. **SQLite V2 no existía allí**: crear desde cero.
 4. Instalar receptor HTTP V2 con SQLite en volumen persistente nuevo y sincronizador con su estado persistente; verificar puerto publicado y ruta `/api/v2/write`. Configurar token, organización y bucket final de InfluxDB sin subir secretos a GitHub.
