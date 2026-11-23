@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Validación del receptor Docker, recuperación y despliegue en laboratorio — 21 y 22/10/2026
 
 ## Objetivo y alcance

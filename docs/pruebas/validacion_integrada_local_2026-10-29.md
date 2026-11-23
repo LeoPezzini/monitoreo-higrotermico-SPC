@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Validación integrada local: NSHT30 + RTC + OLED + microSD — 29/10/2026
 
 ## Alcance

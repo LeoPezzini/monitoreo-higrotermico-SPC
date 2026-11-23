@@ -1,53 +1,43 @@
-# Backend SPC v2 — receptor SQLite + sincronizador InfluxDB + Grafana
+# Backend SPC v2
 
-Esta carpeta contiene el **receptor v2** usado en las pruebas de 12/11/2026, el sincronizador de SQLite a InfluxDB y dos Compose para monitoreo y sincronizacion. El receptor antiguo se mantiene aparte en `../receptor-spc/`: no son intercambiables.
+Actualizado al 23/11/2026. Receptor y sincronizador usados en la instalación del 18/11, confirmados por Leonardo sin cambios. Las fuentes Python recibidas coinciden en lógica con las publicadas. [Evidencias de producción](../../docs/pruebas/puesta-en-servicio-2026-11-18.md).
 
-## Flujo
+## Responsabilidades
 
-ESP32 -> POST `/api/v2/write` :8081 -> receptor CRC16 -> SQLite volumen persistente -> sincronizador (estado persistente) -> InfluxDB 2.7 :8086 -> Grafana :3001.
+| Servicio | Función |
+| --- | --- |
+| `receptor-spc-v2` | POST `/api/v2/write`, ID y CRC16 sobre ID + LF + cuerpo exacto. SQLite en `/datos/spc_v2.sqlite3`. Confirma tras transacción persistida |
+| `spc-sincronizador` | Consulta recepción y estado, envía lotes a InfluxDB y persiste enviados en `/estado/sync.sqlite3` después de HTTP 204 |
+| InfluxDB del laboratorio | Almacenamiento de series temporales |
+| Grafana del laboratorio | Consulta y visualización por ubicación |
 
-**Semantica ACK:** `HTTP 204` del receptor significa persistencia SQLite, **no** confirmacion de InfluxDB. Un duplicado identico da 204; CRC incorrecto 422; mismo ID con cuerpo distinto 409. El sincronizador reintenta si InfluxDB cae.
+Un duplicado idéntico devuelve 204, un ID con otro cuerpo 409 y un CRC inválido 422. Solicitudes mal formadas pueden devolver 400, una ruta incorrecta 404 y un error SQLite 503. El receptor valida estructura de una línea UTF-8, sin validar toda la semántica de Influx LP; una línea inválida para Influx requiere diagnóstico del sincronizador. HTTP sin TLS/autenticación de cliente, para red autorizada.
 
-## Puesta en marcha sobre entorno nuevo
+## Laboratorio existente
 
-**Antes:** instalar Docker Engine/Compose, comprobar puertos disponibles, redes y servicios preexistentes. No ejecutar `docker compose down -v` ni `docker volume prune` sobre datos utiles.
+Las capturas muestran `iot_net`, InfluxDB como `http://influxdb:8086`, organización `mi-org`, bucket `monitoreo-higrotermico`, receptor publicado 8080 y Grafana existente. [Guía de Fede](../../docs/operacion/guia-fede.md) incluye revisión, arranque y respaldo.
 
-1. InfluxDB y Grafana:
-   ```powershell
-   docker compose -f docker-compose.monitoring.yml up -d
-   ```
-   Configurar InfluxDB en http://localhost:8086: org `SPC`, bucket `higrotermia`, retencion permanente. Crear token **write** solo para sincronizador y token **read** solo para Grafana. Mantenerlos fuera de Git.
+`docker-compose.laboratorio.yml` es una **receta reconstruida** con esos parámetros. Usa volúmenes externos `spc-mediciones` y `spc-sync-state` para evitar crear silenciosamente un histórico nuevo. Antes de usar, comparar con `docker inspect` la red, montajes, nombres de volumen y directorio que ya mantiene Fede. El acceso a InfluxDB proviene de `.env.laboratorio`, copiado de `.env.laboratorio.example` y completado privadamente.
 
-2. Construir y arrancar receptor, usando volumen persistente. Esta opcion usa Docker Compose del backend:
-   ```powershell
-   docker compose -f docker-compose.receptor.yml up -d --build
-   ```
-   El receptor publica 8081 y crea/utiliza `spc-mediciones` (externo para el sincronizador). Configurar la URL del ESP32 con IP del host destino (no `localhost`).
+Una vez que Fede haya contrastado configuración y respaldado los datos, la receta puede validarse y aplicarse desde esta carpeta:
 
-3. Copiar `.env.spc.example` como `.env.spc` e introducir el **token de escritura**. Nunca subir `.env.spc`.
-   ```powershell
-   docker compose -f docker-compose.sincronizador.yml up -d
-   docker logs --tail 30 spc-sincronizador
-   ```
-   El Compose de sincronizador utiliza `host.docker.internal:8086`, coherente con pruebas Docker Desktop sobre Windows. **En Ubuntu/Linux la resolucion puede ser diferente**; configurar ruta de red antes del despliegue definitivo. No asumir que el host Windows y Ubuntu tienen la misma red.
+```bash
+docker compose -f docker-compose.laboratorio.yml config --quiet
+docker compose -f docker-compose.laboratorio.yml up -d --build
+```
 
-4. Abrir Grafana `http://localhost:3001` y crear fuente InfluxDB (Flux) con URL `http://spc-influxdb:8086` si ambos servicios corren en la misma red Compose; org `SPC`, bucket `higrotermia`, token **solo lectura**. Crear panel `temperature_c` y otro `humidity_rh`, filtrados por las etiquetas S01 S02 S03 S04 S05 S07 S08 S09 S10 S11 S14 S15.
+Si el servicio existente solo está detenido, usar `docker start` sobre sus contenedores. El Compose es para reconstrucción/mantenimiento coordinado, no hace falta recrear una instalación saludable para obtener el código actualizado. La actualización del repositorio no ejecuta operaciones sobre el servidor.
 
-5. Verificar:
-   ```powershell
-   docker ps
-   docker logs --tail 20 receptor-spc-v2
-   docker logs --tail 20 spc-sincronizador
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\probar_receptor_v2.ps1
-   ```
-   El script de prueba usa IDs fijos; si se ejecuta una segunda vez, su primera prueba pasa a ser un **duplicado**. El esperado sigue siendo 204.
+## Banco Windows y antecedentes
 
-## Migracion de datos
+Los archivos `docker-compose.monitoring.yml`, `docker-compose.receptor.yml` y `docker-compose.sincronizador.yml` conservan la configuración de notebook del 12/11, con receptor 8081, Grafana 3001 y acceso por `host.docker.internal`. Su `.env.spc.example` usa org `SPC` y bucket `higrotermia`. Esos nombres difieren de los observados en producción.
 
-Los volumenes son parte del sistema, no archivos descartables. Respaldar/restaurar **`spc-mediciones`**, **`spc-sync-state`**, volumenes de InfluxDB y Grafana, o bien iniciar un entorno nuevo documentando que no se conserva el historial. Un estado de sincronizador restaurado sin el bucket InfluxDB correspondiente puede marcar registros como ya enviados aunque falten en el destino.
+El [procedimiento de instalación](../../docs/INSTALACION_LABORATORIO_FINAL.md) enlaza el paquete original y distingue el acceso por host-gateway que contenía de la red finalmente observada.
 
-Verificar el nombre real de los volumenes generados por Compose con `docker volume ls` y `docker inspect`. En la notebook de prueba el volumen del receptor existente era `spc-mediciones`, montado en `/datos`.
+## Pruebas y respaldo
 
-## Limitaciones
+`probar_receptor_v2.ps1` conserva el ensayo de banco para 204/204/422/409. `probar_receptor_v2.py` es la prueba de dos envíos iguales del paquete final del 18/11. Ambas insertan datos de prueba y deben ejecutarse en un entorno dedicado o coordinando su efecto sobre el histórico. No son consultas de salud sin escritura.
 
-Receptor no autentica clientes, HTTP sin TLS, puerto 8081 debe limitarse a red autorizada. No hay garantia general de exactly-once extremo a extremo; respaldar bases/estado y probar reinicios. No confundir cantidad de IDs SQLite con cantidad de puntos InfluxDB si coinciden sensor y timestamp.
+Copiar bases y restaurarlas con consistencia entre recepción, estado e InfluxDB. El estado de enviados no debe restaurarse contra un bucket vacío sin definir la reimportación. Detalles en la guía de Fede. Retención/compactación y conciliación exhaustiva siguen abiertos.
+
+El script sincronizador usa `INSERT OR IGNORE` en su estado y consulta en orden de `rowid`. Si Influx confirma y el proceso cae antes de guardar el avance, puede repetir el lote. La misma serie y tiempo conserva la identidad del punto, pero el cotejo de registros se realiza sobre un intervalo definido y por ubicación.

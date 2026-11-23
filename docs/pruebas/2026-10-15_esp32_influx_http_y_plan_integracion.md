@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Prueba integrada de cuatro sensores y HTTP a InfluxDB (2026-10-15)
 
 **Estado:** sketch compilado y probado fisicamente; 20 ciclos completos correctos segun monitor serie. Pendiente contrastar los 80 registros con Data Explorer.

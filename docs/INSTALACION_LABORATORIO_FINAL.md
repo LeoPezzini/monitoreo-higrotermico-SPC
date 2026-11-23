@@ -1,42 +1,24 @@
-# SPC — Instalación definitiva en laboratorio
+# Instalación de laboratorio
 
-## Identificadores de ubicación (sin S01/S07)
+Actualizado al 23/11/2026. El montaje físico quedó el 13/11 y la integración de producción el 18/11. Para el mantenimiento cotidiano usar la [guía de Fede](operacion/guia-fede.md). El [README](../README.md) contiene el mapeo vigente por ubicación y los archivos de SD.
 
-| Ubicación | MUX | Canal |
-|---|---|---|
-| C4I | 0x71 | 6 |
-| C0I | 0x71 | 5 |
-| Y3I | 0x71 | 4 |
-| Y0I | 0x71 | 3 |
-| PcI | 0x71 | 2 |
-| P0I | 0x71 | 1 |
-| AmbI | 0x71 | 0 |
-| AmbE | 0x70 | 7 |
-| C4E | 0x70 | 6 |
-| C0E | 0x70 | 5 |
-| Y3E | 0x70 | 4 |
-| Y0E | 0x70 | 3 |
+## Fuentes de producción
 
-Los 12 SHT30 usan dirección I²C 0x44 detrás de dos multiplexores; bus ESP32 SDA GPIO21 / SCL GPIO22. OLED SSD1306 128×32 en bus principal (0x3C). RTC DS3231 bus separado SDA17/SCL16; microSD SPI SCK14/MISO27/MOSI13/CS26.
+- [Firmware FINAL](../firmware/SPC_JASON_PRODUCCION_10min_FINAL/README.md), confirmado instalado por Leonardo el 23/11.
+- [Backend y configuración](../servidor/receptor-spc-v2/README.md). Receptor y sincronizador confirmados sin cambios en la migración.
+- [Evidencias y seguimiento](pruebas/puesta-en-servicio-2026-11-18.md).
 
-## Cadena de datos
+El paquete recibido del 18/11 incluía `docker-compose.spc-produccion.yml`, con `8080:8080`, `host.docker.internal:8086` y `host-gateway`. Se conserva [ese Compose](../servidor/receptor-spc-v2/docker-compose.spc-produccion.yml) como antecedente del paquete. Las capturas muestran que el sincronizador finalmente utilizó `http://influxdb:8086` sobre `iot_net`, con org `mi-org` y bucket `monitoreo-higrotermico`.
 
-ESP32 → Wi-Fi → receptor HTTP V2 (CRC16-CCITT-FALSE, HTTP 204) → SQLite persistente → sincronizador → InfluxDB 2.x → Grafana.
+La [receta de laboratorio](../servidor/receptor-spc-v2/docker-compose.laboratorio.yml) reconstruye la configuración observada y conserva servicios compartidos fuera del proyecto. Antes de aplicarla hay que contrastar montajes y configuración con los contenedores existentes. Los archivos privados se mantienen en el servidor, fuera de Git.
 
-El tag Influx `sensor` mantiene ese nombre de campo por compatibilidad, pero **su valor es la ubicación**, nunca un número Sxx. Los IDs HTTP también incluyen la ubicación, p. ej. `SPC01-C4I-0000000001`. Los paneles Grafana deben mostrar esas etiquetas.
+## Reinstalación o actualización coordinada
 
-## Procedimiento de instalación limpia
+1. Inventariar contenedores, red y montajes. Respaldar CSV, cola, ACK, eventos, recepción SQLite, estado del sincronizador, InfluxDB y Grafana.
+2. Conservar las identidades de registro de producción. El formateo de SD/reinicio de cola puede reutilizar IDs y generar conflictos contra SQLite; definir continuidad o migración antes de hacerlo.
+3. Completar las plantillas locales y validar el Compose específico del laboratorio. Verificar que apunta a los mismos volúmenes. Respetar los servicios compartidos del laboratorio.
+4. Si se programa el ESP32, aplicar el procedimiento del jumper y registrar la interrupción. Usar el sketch cuya carpeta coincide con el nombre `.ino`. Mantener ajuste automático del RTC desactivado en operación.
+5. Comprobar hora, SD, 12/12 lecturas, respuesta 204, publicación en InfluxDB y actualización por ubicación en Grafana. Registrar versión, fecha y alcance verificado.
+6. Para otra versión de firmware, ensayar antes con el formato de cola/ACK y verificar reinicio y recuperación. Mantener la fuente instalada disponible como retorno.
 
-1. Usando Termius o SSH nativo (`ssh USUARIO@IP`) inventariar: `docker ps -a`, `docker volume ls`, `docker compose version`. No presuponer que la IP doméstica 192.168.1.52 sirve en laboratorio.
-2. Respaldar en la notebook CSV y cola microSD, dashboards JSON y evidencia de las pruebas.
-3. En el servidor **ya hay bucket y dashboards de prueba**: borrar únicamente esos recursos del proyecto tras respaldo; no eliminar otros datos de InfluxDB/Grafana. **SQLite V2 no existía allí**: crear desde cero.
-4. Instalar receptor HTTP V2 con SQLite en volumen persistente nuevo y sincronizador con su estado persistente; verificar puerto publicado y ruta `/api/v2/write`. Configurar token, organización y bucket final de InfluxDB sin subir secretos a GitHub.
-5. Cargar firmware de **30 segundos** para validación, configurando `secrets.h` para la Wi-Fi/IP/puerto del laboratorio. Verificar 12/12 sensores, HTTP 204, SQLite, InfluxDB y paneles.
-6. Detener receptor 2–3 minutos, comprobar adquisición y cola SD durante la caída, reiniciarlo y verificar reenvío y deduplicación.
-7. **Después de las pruebas**, detener servicios, respaldar, formatear microSD FAT32 y reiniciar únicamente SQLite/estado de sincronización dedicados a SPC; vaciar datos de prueba del bucket definitivo o crear otro limpio.
-8. Cargar firmware de **10 minutos**; verificar primer ciclo, identificadores por ubicación y que el bucket y SQLite de producción solo contengan datos posteriores a la puesta en servicio.
-9. Documentar fecha/hora de instalación, IP/puerto, versión de firmware, bucket, rutas de volúmenes y capturas. Nunca publicar `secrets.h` ni `.env` con credenciales.
-
-**Precaución:** no usar `docker compose down -v` ni eliminar volúmenes de servicios compartidos. Un HTTP 204 confirma aceptación en SQLite, no necesariamente escritura ya completada en InfluxDB.
-
-El documento detallado y ambos archivos `.ino` se entregaron también como adjuntos de la conversación para validación en Arduino IDE antes de la instalación.
+La limpieza de datos de banco previa a la primera instalación fue una operación de esa etapa. La conservación de los datos ya adquiridos es parte del mantenimiento actual. Los cambios propuestos de ahorro energético requieren coordinar con el grupo el período de interrupción de mediciones.

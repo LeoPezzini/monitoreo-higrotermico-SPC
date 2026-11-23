@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Validacion integrada SPC — 11 y 12 de noviembre de 2026
 
 ## Alcance y estado

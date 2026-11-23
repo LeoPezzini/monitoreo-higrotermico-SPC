@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Prueba de integración local — 2026-10-14
 
 ## Alcance

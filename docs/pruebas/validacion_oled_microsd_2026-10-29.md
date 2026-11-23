@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Prueba funcional OLED SSD1306 y microSD — 29/10/2026
 
 ## Objetivo

@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Integración de cuatro NSHT30, CRC-8, RTC y microSD — 2026-10-14
 
 ## Resultado observado

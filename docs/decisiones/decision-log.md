@@ -1,6 +1,6 @@
 # Registro de decisiones
 
-> **Vigencia 12/11/2026:** DEC-001 a DEC-019 son antecedentes; para la configuracion actual de doce sensores y backend v2 consultar DEC-020 a DEC-024 mas abajo. Las referencias a 4/11 sensores y receptor que escribe directo a InfluxDB son historicas, no el estado actual.
+> **Vigencia 23/11/2026.** DEC-001 a DEC-024 conservan los antecedentes de octubre y del banco de noviembre. DEC-025 a DEC-031 actualizan instalación, eventos, operación y mejoras. El README y la guía de Fede contienen el estado vigente.
 
 ## DEC-001 — microSD como buffer local
 **Estado:** implementada y validada en banco (19–22/10/2026).
@@ -137,3 +137,35 @@ Se caracterizaron sensores SHT30 frente a referencia en noviembre (ver registro)
 - [Validacion integral 11–12/11](../pruebas/validacion-integrada-12-sht30-2026-11-12.md)
 - [Firmware doce sensores](../../firmware/integrado_12sht30_spc_v2/README.md)
 - [Backend v2 y migracion Docker](../../servidor/receptor-spc-v2/README.md)
+
+## DEC-025 — Firmware por ubicación y muestreo de producción
+
+**Estado al 23/11/2026 — instalado y confirmado por Leonardo.** La fuente vigente es `SPC_JASON_PRODUCCION_10min_FINAL.ino` del 18/11, con primer ciclo al arrancar y luego cada 10 min. Sustituye el mapeo de banco de DEC-022 por AmbI/P0I/PcI/Y0I/Y3I/C0I/C4I y Y0E/Y3E/C0E/C4E/AmbE. Los canales y pines están en el README. Los offsets permanecen desactivados. La configuración final de 10 min llegó sobre el cierre del montaje; los cambios de ahorro quedaron para otra versión probada.
+
+## DEC-026 — Registro persistente de eventos
+
+**Estado — implementado en la fuente FINAL.** Se incorporan `spc_eventos.csv` y dos rotaciones, con umbral 10 MiB por archivo. Incluye motivo de arranque, transiciones de Wi-Fi, HTTP y sensores, cola vacía y eventos RTC/SD que puedan escribirse. El log depende de RTC y SD válidos. CSV, cola y ACK conservan sus formatos y crecimiento append-only. La lectura del código FINAL corrige el dato de 1 MiB de la BETA anterior.
+
+## DEC-027 — Migración a infraestructura existente
+
+**Estado — operación documentada el 18/11 y seguimiento posterior.** Se desplegaron receptor y sincronizador, reutilizando InfluxDB/Grafana del laboratorio. Las capturas muestran red `iot_net`, URL `http://influxdb:8086`, org `mi-org` y bucket `monitoreo-higrotermico`. La notebook usó otros parámetros. La plantilla host-gateway del paquete del 18/11 se conserva como antecedente; la receta de laboratorio del 23/11 se reconstruye de las evidencias y debe cotejarse con los montajes reales antes de recrear servicios.
+
+## DEC-028 — Respaldo operativo y jumper de alimentación
+
+**Estado — procedimiento acordado con Leonardo; foto de ubicación por incorporar.** El puente conecta la alimentación externa hacia el ESP32 para funcionamiento autónomo. Se retira antes de utilizar USB para evitar dos fuentes sobre esa rama y se repone con USB desconectado para operación regular. La intervención se realiza con alimentación desactivada y verificando el circuito real. La UPS y los periféricos pueden conservar energía aunque el ESP32 quede aislado. Ver guía de Fede.
+
+## DEC-029 — Conservación de datos durante mantenimiento
+
+**Estado — criterio de operación vigente.** La SD se respalda completa junto con recepción SQLite, estado del sincronizador, InfluxDB y Grafana. Los IDs dependen de una secuencia persistente; reiniciar la cola sin migrar identidad puede colisionar con los datos remotos. El procedimiento de limpieza previo a la primera instalación se conserva como histórico. Las restauraciones deben mantener coherencia del estado de enviados y del bucket.
+
+## DEC-030 — Evaluación del corte eléctrico del 23/11
+
+**Estado — incidente informado, resultado pendiente.** El servidor quedó apagado y requiere encendido manual. Falta determinar la duración de adquisición del nodo con UPS, horas de reposición y recuperación, integridad de SD y resultado de reenvío. La capacidad declarada de dos baterías de 2600 mAh no sustituye una medición de consumo/autonomía. Completar el registro del incidente tras la inspección.
+
+## DEC-031 — Ahorro energético y reintentos espaciados
+
+**Estado — mejora propuesta, sin carga de nuevo firmware.** Ensayar reposo entre mediciones e intentos de conexión separados por varios minutos durante caídas, con 210 s como ejemplo inicial para medir. Conservar muestreo de 10 min, identidades, cola/ACK y recuperación rápida al volver el servicio. El firmware instalado usa reintentos nominales de 10 s tras fallo y pausas de 100 ms durante entregas exitosas. El ahorro depende también de los periféricos. Coordinar con el grupo una pausa de adquisición y validar en banco antes de actualizar el equipo.
+
+## Fuentes de la revisión del 23/11
+
+[Estado de producción y evidencias](../pruebas/puesta-en-servicio-2026-11-18.md), [guía de Fede](../operacion/guia-fede.md) y [auditoría del repositorio](../auditoria-repositorio-2026-11-23.md).

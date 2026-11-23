@@ -1,0 +1,51 @@
+# Receta reconstruida el 23/11 a partir de la migración observada.
+# Contrastar montajes y configuración con el servicio existente antes de usar.
+# Mantiene InfluxDB/Grafana compartidos fuera de este proyecto Compose.
+services:
+  receptor:
+    build: .
+    image: receptor-spc:v2
+    container_name: receptor-spc-v2
+    ports:
+      - "8080:8080"
+    environment:
+      SPC_DB_FILE: /datos/spc_v2.sqlite3
+      PORT: "8080"
+    volumes:
+      - spc-mediciones:/datos
+    networks:
+      - iot_net
+    restart: unless-stopped
+
+  sincronizador:
+    image: python:3.12-alpine
+    container_name: spc-sincronizador
+    command: ["python", "-u", "/app/sincronizar_influx_spc.py"]
+    env_file:
+      - .env.laboratorio
+    environment:
+      SPC_SOURCE_DB: /datos/spc_v2.sqlite3
+      SPC_SYNC_DB: /estado/sync.sqlite3
+      SPC_SYNC_INTERVAL: "5"
+      SPC_SYNC_BATCH: "100"
+    volumes:
+      - spc-mediciones:/datos:ro
+      - spc-sync-state:/estado
+      - ./sincronizar_influx_spc.py:/app/sincronizar_influx_spc.py:ro
+    networks:
+      - iot_net
+    restart: unless-stopped
+    depends_on:
+      - receptor
+
+networks:
+  iot_net:
+    external: true
+
+volumes:
+  spc-mediciones:
+    external: true
+    name: spc-mediciones
+  spc-sync-state:
+    external: true
+    name: spc-sync-state

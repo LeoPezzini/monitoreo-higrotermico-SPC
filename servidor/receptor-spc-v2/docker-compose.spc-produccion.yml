@@ -1,0 +1,40 @@
+services:
+  receptor:
+    build: .
+    image: receptor-spc:v2
+    container_name: receptor-spc-v2
+    ports:
+      - "8080:8080"
+    environment:
+      SPC_DB_FILE: /datos/spc_v2.sqlite3
+    volumes:
+      - spc-mediciones:/datos
+    restart: unless-stopped
+
+  sincronizador:
+    image: python:3.12-alpine
+    container_name: spc-sincronizador
+    command: ["python", "-u", "/app/sincronizar_influx_spc.py"]
+    env_file:
+      - .env.spc
+    environment:
+      SPC_SOURCE_DB: /datos/spc_v2.sqlite3
+      SPC_SYNC_DB: /estado/sync.sqlite3
+      INFLUX_URL: http://host.docker.internal:8086
+      SPC_SYNC_INTERVAL: "5"
+      SPC_SYNC_BATCH: "100"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - spc-mediciones:/datos:ro
+      - spc-sync-state:/estado
+      - ./sincronizar_influx_spc.py:/app/sincronizar_influx_spc.py:ro
+    restart: unless-stopped
+    depends_on:
+      - receptor
+
+volumes:
+  spc-mediciones:
+    name: spc-mediciones
+  spc-sync-state:
+    name: spc-sync-state

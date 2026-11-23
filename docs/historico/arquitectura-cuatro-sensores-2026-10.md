@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Arquitectura del sistema de monitoreo higrotérmico
 
 **Revisión documental:** 28/10/2026. **Estado:** cadena de cuatro sensores validada en banco y contra servidor Ubuntu del laboratorio; montaje definitivo y escalado pendientes.

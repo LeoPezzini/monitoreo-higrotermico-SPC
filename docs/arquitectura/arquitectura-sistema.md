@@ -1,70 +1,42 @@
-# Arquitectura del sistema — 12 SHT30, receptor SPC v2
+# Arquitectura del equipo instalado
 
-**Revision: 12/11/2026.** Este documento describe la arquitectura validada en banco, no la instalacion final. [Version historica de octubre](../historico/arquitectura-cuatro-sensores-2026-10.md).
+Revisión del 23/11/2026. [Antecedente de cuatro sensores](../historico/arquitectura-cuatro-sensores-2026-10.md). La [puesta en servicio](../pruebas/puesta-en-servicio-2026-11-18.md) diferencia banco, instalación y operación observada.
 
-## Cadena de datos actual
-
-```text
-Exterior: 5 SHT30 -> MUX 0x70 --+
-                                  +-- I2C SDA21 / SCL22 -> ESP32 NodeMCU
-Interior: 7 SHT30 -> MUX 0x71 --+                        |
-                                                        +-- DS3231 I2C independiente (SDA17 / SCL16)
-                                                        +-- microSD SPI (SCK14 MISO27 MOSI13 CS26)
-                                                        |    CSV, cola persistente, diario ACK
-                                                        +-- Wi-Fi -> POST :8081/api/v2/write
-                                                               ID, CRC16, Influx LP
-                                                               |
-                                                        Receptor Python v2 Docker :8080
-                                                               |-- valida CRC16
-                                                               |-- responde 204/422/409
-                                                               +-- SQLite persistente (spc-mediciones)
-                                                                     |
-                                                               Sincronizador + estado persistente
-                                                                     |
-                                                               InfluxDB 2.7, bucket higrotermia
-                                                                     |
-                                                               Grafana 12.3.0, dos paneles
+```mermaid
+flowchart TD
+    S[12 NSHT30 con CRC8] --> M[Dos MUX I²C]
+    M --> E[ESP32]
+    R[DS3231 con pila] --> E
+    E --> D[microSD CSV cola ACK y eventos]
+    D --> H[HTTP con ID y CRC16]
+    H --> P[Receptor Python v2]
+    P --> Q[SQLite persistente]
+    Q --> Y[Sincronizador con estado persistente]
+    Y --> I[InfluxDB 2.7]
+    I --> G[Grafana del laboratorio]
+    P --> A[204 permite ACK local]
 ```
 
-## Hardware y direccionamiento
+## Adquisición y alimentación
 
-| Zona | MUX | Direccion A2 A1 A0 | Sensor / canal |
-|---|---|---|---|
-| Exterior | `0x70` | GND GND GND | S01/CH2 S02/CH3 S03/CH4 S04/CH5 S05/CH6 |
-| Interior | `0x71` | GND GND 3,3 V | S07/CH0 S08/CH1 S09/CH2 S10/CH3 S11/CH4 S14/CH5 S15/CH6 |
+El [README](../../README.md#montaje) contiene todos los pines y los doce canales por ubicación. Sensores y OLED comparten SDA21/SCL22 a 100 kHz; RTC tiene bus SDA17/SCL16; SD usa SPI. Alimentación de 5 V desde UPS con regulación de 3,3 V para periféricos. El jumper interrumpe la alimentación externa hacia el ESP32 durante el uso del USB. La ubicación física y el aislamiento de esa rama se verifican en la placa real según la [guía de Fede](../operacion/guia-fede.md).
 
-La nomenclatura de placas y su ubicacion precisa se incorpora cuando se reciba el listado del equipo. La orientacion del conector aun debe verificarse con multimetro. Un cable de prueba de 2 m obtuvo 200/200 lecturas CRC8 OK a 100 kHz; aun no se ha demostrado estabilidad I2C de los cables definitivos instalados todos juntos.
+El RTC contiene hora argentina. Los puntos LP usan tiempo UTC en segundos, con tres horas de conversión. El firmware sincroniza el reloj del ESP32 para marcas FAT desde el DS3231. Una ronda comparte timestamp y lee sucesivamente las ramas. La cadencia es primer ciclo al arrancar y después 10 min. Una lectura rechazada no genera fila válida del sensor.
 
-## Integridad y persistencia
+## Persistencia
 
-1. SHT30 devuelve 6 bytes por lectura con CRC8 para temperatura y humedad. Lectura invalida no se envia como dato correcto.
-2. RTC DS3231 aporta timestamp por ciclo. Se ajusto una sola vez; `AJUSTAR_RTC_UNA_VEZ=false` en firmware actual.
-3. microSD persiste cola de registros con ID y diario de ACK, para reenvio cuando el receptor no esta disponible.
-4. Receptor v2 valida CRC16-CCITT-FALSE calculado sobre ID + LF + cuerpo exacto, deduplica por ID y almacena en SQLite. `HTTP 204` confirma persistencia en SQLite. `422` indica CRC incorrecto, `409` ID ya usado con otro payload.
-5. Sincronizador lee SQLite, manda LP por lotes a InfluxDB y recuerda en volumen persistente los IDs confirmados. Cuando InfluxDB falla, mantiene pendientes y reintenta.
-6. Grafana consulta InfluxDB con token read; sincronizador utiliza token write. URL y credenciales del ESP32 no incluyen token de InfluxDB.
+1. CSV se escribe antes de agregar ID y cuerpo a la cola. Un fallo parcial puede dejar diferencias entre CSV y cola; ambos se cotejan al diagnosticar un incidente.
+2. ACK persistente indica la posición consecutiva confirmada. El arranque valida cola y ACK; una inconsistencia detiene adquisición. Una fila confirmada sigue presente en la cola.
+3. Receptor verifica ID y CRC16-CCITT-FALSE sobre ID UTF-8, LF y cuerpo exacto. Guarda en SQLite con clave primaria y transacción antes de contestar 204. ID idéntico/cuerpo idéntico devuelve 204; cuerpo distinto 409; CRC inválido 422. El control de cuerpo comprueba UTF-8 y una línea; la validez semántica de LP se resuelve al publicar en InfluxDB.
+4. Sincronizador consulta SQLite y su base de estado, transmite lotes y guarda IDs enviados tras el 204 de InfluxDB. El intervalo por defecto del script es 5 s y el lote 100. Sus valores efectivos se inspeccionan en el contenedor.
+5. Un corte entre aceptación remota y avance local puede repetir una solicitud. SQLite resuelve duplicados por ID/cuerpo. InfluxDB identifica el punto por measurement, tags y timestamp; repetir los mismos campos y valores mantiene ese punto. La conciliación completa se hace sobre el mismo intervalo e identidad.
 
-## Validacion realizada
+## Eventos y consumo
 
-- Doce SHT30 con CRC8 correcto, RTC, SD y POST/204 en ciclos de banco.
-- Caida receptor: 48 registros pendientes recuperados de secuencias 217 a 264, sin faltantes.
-- CRC16/SQLite: 204 nuevo, 204 duplicado identico, 422 CRC incorrecto, 409 colision de ID; SQLite conserva solo dato valido.
-- En una instantanea SQLite, secuencias 1–3546 unicas y sin huecos.
-- InfluxDB y Grafana mostraron doce series de temperatura y doce de humedad.
-- Caida y recuperacion InfluxDB: reintentos observados, luego 96 registros en 4 lotes HTTP 204 y continuidad.
-- Conteo historico InfluxDB: S08 tenia 6 puntos menos que los otros once sensores; ventana reciente de 30 minutos 56 puntos por sensor. Investigar sin atribuir aun la causa.
+El firmware FINAL tiene `spc_eventos.csv` y dos rotaciones a partir de 10 MiB. Los eventos requieren SD y RTC; registran arranque, transiciones Wi-Fi/HTTP/sensor y cola vacía cuando corresponde. Algunos errores de SD se observan solo por monitor serie. Retención/compactación de CSV, cola y ACK quedan para mantenimiento.
 
-## Despliegue y limites
+Reintento nominal tras fallo 10 s, pausa entre entregas exitosas 100 ms y timeout HTTP 2 s, además del tiempo de operación. Adquisición tiene prioridad. Suspensión y reintentos de varios minutos durante una caída siguen propuestos, con ensayo antes de instalar. Dormir el ESP32 no desconecta por sí mismo periféricos externos.
 
-- En notebook Windows: receptor `:8081`, InfluxDB `:8086`, Grafana Docker `:3001`. Son puertos del banco, no configuracion irrevocable del laboratorio.
-- Respaldar volumen SQLite, volumen de estado del sincronizador, InfluxDB, Grafana y credenciales antes de trasladar datos. **No restaurar estado de enviados si el bucket destino esta vacio**, pues impediria reimportar registros.
-- El receptor HTTP no usa TLS ni autenticacion por dispositivo; proteger por red/firewall.
-- No se garantiza exactly-once extremo a extremo ni equivalencia registro a punto InfluxDB cuando measurement/tags/timestamp se repiten.
-- Pendientes: soldadura y cableado final, UPS, prueba de 12 ramales simultaneos, instalacion con Fede, prueba prolongada, Wireshark, comparacion exhaustiva SQLite/InfluxDB, mantenimiento de SD y retencion.
+## Configuración de servidor
 
-## Fuentes de referencia
-
-- [Pruebas integradas noviembre 2026](../pruebas/validacion-integrada-12-sht30-2026-11-12.md)
-- [Firmware y asignacion de canales](../../firmware/integrado_12sht30_spc_v2/README.md)
-- [Backend y guia de migracion](../../servidor/receptor-spc-v2/README.md)
-- [Registro de decisiones](../decisiones/decision-log.md)
+Red de laboratorio `iot_net`, InfluxDB accesible como `http://influxdb:8086`, organización `mi-org`, bucket `monitoreo-higrotermico`, receptor publicado en 8080. La fuente y el estado de sincronización son dos bases SQLite diferentes. Credenciales se conservan localmente. Cada restauración debe mantener coherencia entre las dos bases y el destino InfluxDB. Receptor HTTP sin autenticación de cliente ni TLS, limitado al ámbito de red autorizado.

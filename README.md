@@ -1,92 +1,85 @@
-# Monitoreo higrotermico SPC — sistema de 12 sensores
+# Monitoreo higrotérmico SPC
 
-**Estado actualizado: 12/11/2026.** Sistema para medir temperatura y humedad en placas experimentales de materiales aislantes. En banco se verifico la cadena de 12 sensores hasta Grafana. La instalacion final y las pruebas de campo siguen pendientes.
+Estado documental al **23/11/2026**. Dispositivo instalado para registrar temperatura y humedad relativa del aire en doce ubicaciones de placas experimentales del Instituto de Mecánica Aplicada. El montaje quedó adquiriendo localmente el 13/11 y se integró al servidor del laboratorio el 18/11. Las capturas muestran seguimiento de 48 horas. El corte eléctrico informado el 23/11 está pendiente de revisión de SD y recuperación del servidor.
 
-## Arquitectura actual
+## Funcionamiento
 
-```text
-12 SHT30 (5 exterior, 7 interior)
-   -> dos MUX I2C (0x70 / 0x71)
-   -> ESP32 NodeMCU + RTC DS3231 + microSD (CSV, cola, ACK)
-   -> Wi-Fi / POST con CRC16 e ID unico
-   -> receptor Python v2 en Docker (HTTP 204 / 422 / 409)
-   -> SQLite persistente (deduplicacion)
-   -> sincronizador persistente con reintentos
-   -> InfluxDB 2.7 (bucket higrotermia)
-   -> Grafana 12.3.0 (12 temperaturas y 12 humedades)
+```mermaid
+flowchart TD
+    A[12 NSHT30 y dos multiplexores] --> B[ESP32 y reloj DS3231]
+    B --> C[CSV y cola persistente en microSD]
+    C --> D[POST con ID y CRC16]
+    D --> E[Receptor Python v2]
+    E --> F[SQLite persistente]
+    F --> G[Sincronizador y estado de enviados]
+    G --> H[InfluxDB]
+    H --> I[Grafana]
+    E --> J[HTTP 204 y ACK en SD]
 ```
 
-El **ACK HTTP 204 del receptor** certifica que SQLite acepto el registro; no implica escritura inmediata en InfluxDB. La microSD protege datos no recibidos; SQLite conserva datos recibidos hasta sincronizacion. El receptor anterior, que reenviaba directamente a InfluxDB, queda preservado como implementacion historica separada.
+El receptor confirma **persistencia en SQLite**. El sincronizador confirma la publicación al recibir el 204 de InfluxDB. Un ID repetido con cuerpo idéntico devuelve 204 y conserva una fila SQLite; un conflicto devuelve 409 y un CRC16 incorrecto devuelve 422. Los fallos de entrega dejan el registro pendiente. La equivalencia completa de históricos requiere cotejar los registros del mismo intervalo.
 
-## Hardware y distribucion
+## Archivos vigentes
 
-| Componente | Estado al 12/11 |
-|---|---|
-| ESP32 NodeMCU / ESP-WROOM-32 | Firmware de 12 SHT30 funcionando en banco |
-| 12 sensores SHT30 seleccionados | Funcionan con cableado actual; 20 modulos disponibles inicialmente |
-| MUX exterior | `0x70`: A0=A1=A2 a GND; 5 sensores S01–S05 |
-| MUX interior | `0x71`: A0 a 3,3 V; A1=A2 a GND; 7 sensores S07, S08, S09, S10, S11, S14, S15 |
-| RTC DS3231 | SDA GPIO17, SCL GPIO16, bus I2C independiente; flag lostPower corregido |
-| microSD SPI | SCK14, MISO27, MOSI13, CS26; cola y ACK persistentes |
-| Gabinete y placas | Gabinete amurado, perforaciones realizadas y cables cortados; soldaduras en progreso el 12/11 |
-| Cable de prueba de 2 metros | 200/200 lecturas correctas a 100 kHz; ensayo preliminar |
-| UPS 5 V y llave ON/OFF | Integracion y verificacion electrica pendientes |
+- [Firmware de producción y configuración](firmware/SPC_JASON_PRODUCCION_10min_FINAL/README.md). Fuente FINAL del 18/11, confirmada por Leonardo el 23/11 como la instalada. Periodicidad de 10 minutos; log de eventos rotativo; offsets de temperatura desactivados. El código publicado coincide byte por byte con el archivo recibido.
+- [Receptor, sincronizador y configuración de servidor](servidor/receptor-spc-v2/README.md). Los scripts recibidos y el repositorio coinciden en lógica; Leonardo confirmó que siguieron sin modificaciones durante la migración.
+- [Guía de operación y traspaso a Fede](docs/operacion/guia-fede.md).
+- [Instalación y configuración real](docs/INSTALACION_LABORATORIO_FINAL.md).
+- [Arquitectura y límites](docs/arquitectura/arquitectura-sistema.md).
+- [Registro de decisiones](docs/decisiones/decision-log.md).
+- [Instalación, evidencias y corte eléctrico](docs/pruebas/puesta-en-servicio-2026-11-18.md).
+- [Revisión del repositorio del 23/11](docs/auditoria-repositorio-2026-11-23.md).
 
-La cantidad de placas, sus nomenclaturas formales y las ubicaciones especificas se completaran cuando se disponga del plano/etiquetado del proyecto. **No asumir que el pin 1 del conector es VCC sin verificar continuidad y polaridad en la placa real.**
+## Montaje
 
-### Mapeo de sensores del firmware
+| Elemento | Configuración |
+| --- | --- |
+| ESP32 DevKit | Adquisición y envío HTTP por Wi-Fi |
+| Sensores y OLED | I²C SDA21 / SCL22, 100 kHz; NSHT30 0x44, OLED 0x3C |
+| Multiplexores | Exterior 0x70; interior 0x71 |
+| DS3231 | Segundo bus SDA17 / SCL16; hora local argentina; CR2032 y resistencia de carga retirada |
+| microSD | SPI SCK14 / MISO27 / MOSI13 / CS26 |
+| Alimentación | UPS de 5 V, regulador de 3,3 V y jumper que separa la alimentación del ESP32 de la placa durante el uso de USB |
 
-| Sensor | Ubicacion por MUX | MUX | CH |
-|---|---|---|---:|
-| S01 | Exterior | `0x70` | 2 |
-| S02 | Exterior | `0x70` | 3 |
-| S03 | Exterior | `0x70` | 4 |
-| S04 | Exterior | `0x70` | 5 |
-| S05 | Exterior | `0x70` | 6 |
-| S07 | Interior | `0x71` | 0 |
-| S08 | Interior | `0x71` | 1 |
-| S09 | Interior | `0x71` | 2 |
-| S10 | Interior | `0x71` | 3 |
-| S11 | Interior | `0x71` | 4 |
-| S14 | Interior | `0x71` | 5 |
-| S15 | Interior | `0x71` | 6 |
+| Ubicación | MUX | Canal |
+| --- | --- | --- |
+| AmbI | 0x71 | 0 |
+| P0I | 0x71 | 1 |
+| PcI | 0x71 | 2 |
+| Y0I | 0x71 | 3 |
+| Y3I | 0x71 | 4 |
+| C0I | 0x71 | 5 |
+| C4I | 0x71 | 6 |
+| Y0E | 0x70 | 3 |
+| Y3E | 0x70 | 4 |
+| C0E | 0x70 | 5 |
+| C4E | 0x70 | 6 |
+| AmbE | 0x70 | 7 |
 
-## Estado de validacion
+## Persistencia en microSD
 
-| Bloque | Estado y evidencia |
-|---|---|
-| Adquisicion 12 sensores, CRC8 y RTC | **Validado en banco**; todos respondieron correctamente en ciclos integrados |
-| microSD + cola y ACK | **Validado en banco**; 480/480 ACK reportados al cierre del ensayo del 11/11 |
-| Caida del receptor | **Validada**; 48/48 registros pendientes (217–264) recuperados en SQLite |
-| CRC16 y deduplicacion del receptor v2 | **Validada**; respuestas 204, 204, 422, 409 y consulta SQLite consistente |
-| Secuencias de sensores en SQLite | **Validada en la instantanea consultada**; IDs numerados 1–3546 sin huecos |
-| SQLite → InfluxDB | **Validada funcionalmente**; HTTP 204 y reintentos |
-| InfluxDB caido y recuperado | **Validada funcionalmente**; 96 registros aceptados en lotes tras reinicio, siguio sincronizando |
-| Grafana | **Validado**; doce series por variable, temperatura y humedad |
-| Comparacion exhaustiva SQLite ↔ InfluxDB | Pendiente; hubo diferencia historica de seis puntos para S08, no observada en ventana reciente de 30 min (56 por sensor) |
-| UPS / cableado final | Pendiente de montaje y ensayo |
-| Wireshark | Pendiente |
-| Despliegue definitivo, fin de semana | Pendiente |
+| Archivo | Contenido |
+| --- | --- |
+| `spc_final.csv` | Hora local, ubicación, temperatura, HR y estado de cada lectura aceptada |
+| `spc_final_cola.txt` | ID, tabulador y cuerpo Line Protocol con tiempo UTC en segundos |
+| `spc_final_ack.txt` | Diario de avance confirmado con índice y complemento binario |
+| `spc_eventos.csv` | Fecha y hora, evento, componente y detalle |
+| `spc_eventos_1.csv`, `spc_eventos_2.csv` | Rotaciones del log de eventos, creadas cuando se alcanza el umbral |
 
-Ver el detalle en [registro de validacion 11–12/11](docs/pruebas/validacion-integrada-12-sht30-2026-11-12.md).
+El umbral del log es de **10 MiB por archivo** y conserva el activo y dos rotaciones. CSV, cola y ACK siguen creciendo. Un registro confirmado permanece en la cola; el ACK determina desde dónde se reanuda. Al reiniciar, una cola incompleta o inconsistente bloquea la adquisición para evitar sobrescribirla. Los eventos requieren RTC y SD disponibles.
 
-## Proximos pasos reales
+## Servidor observado en producción
 
-1. Terminar soldaduras, crimpeado y etiquetado de sensores/cables; comprobar polaridades y canales antes de energizar.
-2. Ensayar doce sensores **con longitudes definitivas**, incluyendo todos los cables exteriores simultaneamente; documentar errores I2C/CRC8 por sensor.
-3. Verificar esquema de UPS y llave ON/OFF con multimetro; ensayar cortes de energia y recuperacion.
-4. Migrar backend Docker a la infraestructura definitiva con Fede, coordinando puertos, volumenes, permisos, tokens, IP estable y copias de seguridad, sin modificar servicios ajenos.
-5. Validar adquisicion y dashboards desde ubicaciones definitivas; monitoreo continuo durante el fin de semana.
-6. Capturar trafico real en Wireshark y completar comparacion de datos SQLite/InfluxDB en un intervalo fijo.
-7. Completar etiquetado formal de placas, esquema electrico y registro fotografico; ensayar SD llena, corrupcion, retencion y politica de mantenimiento.
+Receptor `receptor-spc-v2`, puerto publicado 8080; sincronizador `spc-sincronizador`; InfluxDB 2.7 y Grafana del laboratorio. La evidencia de migración muestra `INFLUX_URL=http://influxdb:8086`, organización `mi-org`, bucket `monitoreo-higrotermico` y red `iot_net`. Los Compose anteriores de notebook usan otros nombres y puertos. Consultar la guía antes de reconstruir servicios existentes.
 
-## Codigo y documentacion
+## Verificaciones y próximas mejoras
 
-- [Firmware 12 sensores + plantilla secrets](firmware/integrado_12sht30_spc_v2/README.md)
-- [Backend v2, Docker Compose, sincronizador y pruebas](servidor/receptor-spc-v2/README.md)
-- [Arquitectura vigente](docs/arquitectura/arquitectura-sistema.md)
-- [Registro de decisiones](docs/decisiones/decision-log.md)
-- [Caracterizacion SHT30](docs/pruebas/caracterizacion-sht30-2026-11.md)
-- [Historial README del prototipo de 4 sensores](docs/historico/readme-etapa-4-sensores-hasta-2026-10.md)
+- Banco documentado con CRC8, RTC, CSV, reenvío tras reinicio, CRC16 y deduplicación SQLite; 48 registros recuperados tras caída del receptor y 96 aceptados por InfluxDB después de otra interrupción.
+- Montaje local del fin de semana del 13–16/11 y ciclo real con 12 ubicaciones en la migración del 18/11. Paneles posteriores de 24 y 48 horas.
+- Caracterización en dos series de 501 ciclos con 15 sensores activos. Se conserva la limitación de referencia de HR en [su registro](docs/pruebas/caracterizacion-sht30-2026-11.md).
+- Pendiente reconstruir los datos del corte informado el 23/11, medir consumo/autonomía y conciliar los incidentes históricos de SD y S08.
+- Propuestos ahorro energético, suspensión entre mediciones y reintentos espaciados durante caídas. Requieren ensayo en banco y coordinación de una interrupción del registro antes de reemplazar el firmware instalado.
 
-**Seguridad:** credenciales en `secrets.h` o `.env.spc` locales, nunca versionadas; receptor HTTP sin TLS y sin autenticacion de cliente, por lo que el puerto debe restringirse a red autorizada. No afirmar exactly-once extremo a extremo.
+Credenciales en `secrets.h` y archivos `.env` locales. El receptor usa HTTP sin TLS ni autenticación de dispositivo. Sus accesos deben mantenerse en la red autorizada del laboratorio.
+
+El firmware de banco y el receptor anterior se conservan como antecedentes en sus carpetas originales.

@@ -1,3 +1,5 @@
+> Firmware de banco. La fuente instalada del 18/11 está en [producción FINAL](../SPC_JASON_PRODUCCION_10min_FINAL/README.md).
+
 # Firmware integrado — doce SHT30 y receptor v2
 
 Archivo: [integrado_12sht30_spc_v2.ino](integrado_12sht30_spc_v2.ino).

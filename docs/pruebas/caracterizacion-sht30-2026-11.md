@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Caracterización comparativa SHT30 — 10 y 11 de noviembre de 2026
 
 ## Alcance y límites

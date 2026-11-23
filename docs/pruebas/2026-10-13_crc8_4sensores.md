@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 # Prueba de CRC-8 NSHT30 — 2026-10-13
 
 ## Objetivo

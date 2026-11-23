@@ -1,3 +1,5 @@
+> Receptor histórico de octubre. El sistema instalado utiliza [receptor v2 con SQLite y sincronizador](../receptor-spc-v2/README.md).
+
 # Receptor SPC — Docker / InfluxDB 2.x
 
 Implementación de referencia documentada a partir del comportamiento funcional validado en notebook Windows (21/10/2026) y Ubuntu del laboratorio (22/10/2026). **No está verificado que este archivo sea idéntico, byte por byte, al script que quedó en `~/spc-receptor` del Ubuntu.** Antes de sustituir un despliegue operativo, comparar ambos scripts y el Dockerfile con Fede. No se modifica el contenedor existente desde este repositorio.

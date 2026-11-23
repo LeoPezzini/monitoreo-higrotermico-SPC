@@ -1,3 +1,5 @@
+> Registro histórico. Para el estado al 23/11/2026 y la operación vigente, consultar [estado actual](../../README.md).
+
 > Archivo historico: corresponde principalmente al prototipo de cuatro sensores hasta octubre de 2026. Consultar el README principal para el estado de doce sensores.
 
 # Monitoreo higrotérmico — Sistemas para Control
@@ -28,7 +30,7 @@ NSHT30 (4 en banco; ~11 previstos, a confirmar) -> PCA9548A x 2 -> ESP32
                                                                    -> InfluxDB 2.7 :8086 -> Grafana
 ```
 
-[Arquitectura técnica, conexiones y límites de validación](docs/arquitectura/arquitectura-sistema.md).
+[Arquitectura técnica, conexiones y límites de validación](../../docs/arquitectura/arquitectura-sistema.md).
 
 La arquitectura HTTP quedó validada con un receptor Python en Docker que reenvía Line Protocol a InfluxDB 2.7. El 22/10/2026 se verificó el envío directo desde el ESP32 al servidor Ubuntu del laboratorio, con visualización en Grafana. El despliegue permanente y el escalado siguen pendientes.
 
@@ -98,15 +100,15 @@ timestamp,sensor,temperatura_C,humedad_RH,estado
 
 Se validó en banco la integración de los cuatro NSHT30 con CRC-8 de temperatura y humedad, RTC y escritura reportada en microSD. Se modificó el circuito de carga del módulo RTC para usar una CR2032 no recargable y se comprobó que el reloj continuó avanzando durante un corte breve, con el ajuste automático desactivado. El archivo CSV no se releyó en esta prueba. La hora del RTC está en hora local de Argentina y requerirá conversión a UTC antes de generar timestamps Unix para InfluxDB.
 
-- [Sketch integrado con CRC, RTC y SD](firmware/pruebas/integracion_4sensores_crc_rtc_sd/integracion_4sensores_crc_rtc_sd.ino)
-- [Registro de prueba y modificación del RTC](docs/pruebas/2026-10-14_integracion_crc_rtc_sd_cr2032.md)
+- [Sketch integrado con CRC, RTC y SD](../../firmware/pruebas/integracion_4sensores_crc_rtc_sd/integracion_4sensores_crc_rtc_sd.ino)
+- [Registro de prueba y modificación del RTC](../../docs/pruebas/2026-10-14_integracion_crc_rtc_sd_cr2032.md)
 
 ### Integración local completa con Line Protocol — 2026-10-14
 
 Se validaron 41 ciclos y 164 registros por archivo con cuatro NSHT30, CRC-8, RTC y microSD. El firmware genera CSV y Line Protocol con timestamp Unix UTC en segundos, reabre los archivos y muestra su contenido por serie. No hay transmisión ni gestión de ACK implementadas todavía.
 
-- [Sketch de integración local](firmware/pruebas/integracion_local_4sensores_influx_lp/integracion_local_4sensores_influx_lp.ino)
-- [Registro de validación](docs/pruebas/2026-10-14_integracion_local_influx_lp.md)
+- [Sketch de integración local](../../firmware/pruebas/integracion_local_4sensores_influx_lp/integracion_local_4sensores_influx_lp.ino)
+- [Registro de validación](../../docs/pruebas/2026-10-14_integracion_local_influx_lp.md)
 
 ### Transmisión HTTP
 
@@ -122,8 +124,8 @@ Una medición real se serializó como JSON, se envió mediante POST y el servido
 
 Se probó un sketch independiente con los cuatro NSHT30 conectados a dos PCA9548A. En un ciclo completo los cuatro sensores devolvieron CRC-8 correcto tanto para temperatura como para humedad relativa. S02 presentó inicialmente error I2C código 4 y volvió a responder después de revisar conexiones; posible contacto intermitente no confirmado. No se modificó el firmware anterior de integración.
 
-- [Sketch de prueba CRC-8](firmware/pruebas/nsht30_crc8_4sensores/nsht30_crc8_4sensores.ino)
-- [Resultados y observaciones](docs/pruebas/2026-10-13_crc8_4sensores.md)
+- [Sketch de prueba CRC-8](../../firmware/pruebas/nsht30_crc8_4sensores/nsht30_crc8_4sensores.ino)
+- [Resultados y observaciones](../../docs/pruebas/2026-10-13_crc8_4sensores.md)
 
 ### InfluxDB local y HTTP desde ESP32 — 2026-10-15
 
@@ -131,9 +133,9 @@ En Windows 10 se inicio InfluxDB v2.7.0 sin Docker. Se verificaron escritura man
 
 Se preparo una **nueva prueba integrada, aun no ejecutada**, de cuatro NSHT30 + CRC + RTC + microSD + HTTP POST. Realiza 20 ciclos aproximados cada 30 segundos (hasta 80 registros), con CSV y LP historicos locales, y log de respuestas HTTP. No implementa aun reenvio ni deduplicacion. Credenciales exclusivamente en secrets.h local, nunca en GitHub.
 
-- [Sketch integrado para probar](firmware/pruebas/integracion_4sensores_http_influx/integracion_4sensores_http_influx.ino)
-- [Plantilla de credenciales sin secretos](firmware/pruebas/integracion_4sensores_http_influx/secrets.example.h)
-- [Registro y protocolo de prueba](docs/pruebas/2026-10-15_esp32_influx_http_y_plan_integracion.md)
+- [Sketch integrado para probar](../../firmware/pruebas/integracion_4sensores_http_influx/integracion_4sensores_http_influx.ino)
+- [Plantilla de credenciales sin secretos](../../firmware/pruebas/integracion_4sensores_http_influx/secrets.example.h)
+- [Registro y protocolo de prueba](../../docs/pruebas/2026-10-15_esp32_influx_http_y_plan_integracion.md)
 
 ## Estrategia de confiabilidad
 
@@ -155,7 +157,7 @@ Se verificó un firmware de banco con cuatro NSHT30, CRC-8, RTC, CSV y Line Prot
 
 **Alcance:** esta prueba no demuestra deduplicación exactamente-una-vez en todas las condiciones: una caída entre el HTTP 204 y la escritura local del ACK puede provocar reenvío. La cola y el diario crecen sin compactación; se requiere una política de retención y recuperación ante archivos dañados. El endpoint y credenciales corresponden al banco local, no al servidor del laboratorio. La versión exacta compilada para la prueba con receptor Docker debe archivarse por separado sin secretos.
 
-- [Registro de prueba del 19/10 y observaciones](docs/pruebas/2026-10-19_cola_ack_reenvio_grafana.md)
+- [Registro de prueba del 19/10 y observaciones](../../docs/pruebas/2026-10-19_cola_ack_reenvio_grafana.md)
 
 ## Receptor Docker y validación en el laboratorio — 21 y 22/10/2026
 
@@ -163,8 +165,8 @@ Se implementó un receptor HTTP Python en Docker (puerto 8080) que recibe Line P
 
 Una consulta sobre un intervalo de 15 minutos devolvió 26 registros de temperatura por cada sensor S01–S04 y 26 de humedad por cada uno. **Esto no demuestra ausencia total de duplicados** ni entrega exactamente una vez. El receptor de prueba tampoco autentica al cliente ni realiza almacenamiento local.
 
-- [Registro de ensayos y limitaciones](docs/pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
-- [Código y procedimiento del receptor Docker](servidor/receptor-spc/README.md)
+- [Registro de ensayos y limitaciones](../../docs/pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
+- [Código y procedimiento del receptor Docker](../../servidor/receptor-spc/README.md)
 
 ## Próximos pasos
 
@@ -179,8 +181,8 @@ Una consulta sobre un intervalo de 15 minutos devolvió 26 registros de temperat
 
 ## Documentación principal
 
-- [Arquitectura técnica actualizada](docs/arquitectura/arquitectura-sistema.md)
-- [Auditoría de repositorio y brechas pendientes (28/10)](docs/auditoria-repositorio-2026-10-28.md)
-- [Registro de decisiones DEC-001 a DEC-019](docs/decisiones/decision-log.md)
-- [Validación Docker, recuperación y Ubuntu (21–22/10)](docs/pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
-- [Operación del receptor Python](servidor/receptor-spc/README.md)
+- [Arquitectura técnica actualizada](../../docs/arquitectura/arquitectura-sistema.md)
+- [Auditoría de repositorio y brechas pendientes (28/10)](../../docs/auditoria-repositorio-2026-10-28.md)
+- [Registro de decisiones DEC-001 a DEC-019](../../docs/decisiones/decision-log.md)
+- [Validación Docker, recuperación y Ubuntu (21–22/10)](../../docs/pruebas/2026-10-21_22_receptor_docker_recuperacion_y_migracion.md)
+- [Operación del receptor Python](../../servidor/receptor-spc/README.md)
