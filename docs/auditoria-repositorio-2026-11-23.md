@@ -31,7 +31,7 @@ El entorno de revisión carece de Arduino CLI/core/librerías de compilación y 
 
 ## Pendientes concretos
 
-- Resultado de SD/UPS y recuperación del corte del 23/11.
+- Seguimiento del corte del 23/11: [recuperación observada el 24/11](pruebas/puesta-en-servicio-2026-11-18.md). Quedan pendientes el cotejo de registros y la medición de autonomía.
 - Foto del jumper y confirmación de su aislamiento en la preperforada para el traspaso.
 - Versiones exactas del core ESP32 y librerías del compilado instalado.
 - Cotejo del archivo de despliegue vigente con la receta reconstruida, y montajes efectivos.
