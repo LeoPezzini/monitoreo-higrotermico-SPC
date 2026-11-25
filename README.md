@@ -1,6 +1,6 @@
 # Monitoreo higrotérmico SPC
 
-Estado documental al **23/11/2026**. Dispositivo instalado para registrar temperatura y humedad relativa del aire en doce ubicaciones de placas experimentales del Instituto de Mecánica Aplicada. El montaje quedó adquiriendo localmente el 13/11 y se integró al servidor del laboratorio el 18/11. Las capturas muestran seguimiento de 48 horas. El corte eléctrico informado el 23/11 está pendiente de revisión de SD y recuperación del servidor.
+Estado documental al **25/11/2026**. Dispositivo instalado para registrar temperatura y humedad relativa del aire en doce ubicaciones de placas experimentales del Instituto de Mecánica Aplicada. El montaje quedó adquiriendo localmente el 13/11 y se integró al servidor del laboratorio el 18/11. Las capturas muestran seguimiento de 48 horas. Tras el corte informado el 23/11, el dispositivo siguió adquiriendo y reanudó automáticamente el envío cuando el servidor volvió a estar disponible el 24/11.
 
 ## Funcionamiento
 
@@ -77,7 +77,8 @@ Receptor `receptor-spc-v2`, puerto publicado 8080; sincronizador `spc-sincroniza
 - Banco documentado con CRC8, RTC, CSV, reenvío tras reinicio, CRC16 y deduplicación SQLite; 48 registros recuperados tras caída del receptor y 96 aceptados por InfluxDB después de otra interrupción.
 - Montaje local del fin de semana del 13–16/11 y ciclo real con 12 ubicaciones en la migración del 18/11. Paneles posteriores de 24 y 48 horas.
 - Caracterización en dos series de 501 ciclos con 15 sensores activos. Se conserva la limitación de referencia de HR en [su registro](docs/pruebas/caracterizacion-sht30-2026-11.md).
-- Pendiente reconstruir los datos del corte informado el 23/11, medir consumo/autonomía y conciliar los incidentes históricos de SD y S08.
+- La OLED mostró 4.452, 4.117 y 3.359 pendientes durante el reenvío. En Grafana, a las 16:40 del 24/11, las series del fin de semana se veían sin huecos. El [registro de producción](docs/pruebas/puesta-en-servicio-2026-11-18.md) documenta la recuperación observada.
+- Quedan pendientes el cotejo registro por registro del corte, la medición de consumo/autonomía y la conciliación de los incidentes históricos de SD y S08.
 - Propuestos ahorro energético, suspensión entre mediciones y reintentos espaciados durante caídas. Requieren ensayo en banco y coordinación de una interrupción del registro antes de reemplazar el firmware instalado.
 
 Credenciales en `secrets.h` y archivos `.env` locales. El receptor usa HTTP sin TLS ni autenticación de dispositivo. Sus accesos deben mantenerse en la red autorizada del laboratorio.
