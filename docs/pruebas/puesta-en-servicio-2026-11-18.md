@@ -1,6 +1,6 @@
 # Instalación y seguimiento de producción
 
-Actualización al 23/11/2026, basada en los chats exportados, el paquete final del 18/11 y las capturas entregadas. Leonardo confirmó el 23/11 que firmware y scripts no fueron modificados durante la migración.
+Actualización al 25/11/2026, basada en los chats exportados, el paquete final del 18/11 y las capturas entregadas. Leonardo confirmó el 23/11 que firmware y scripts no fueron modificados durante la migración.
 
 ## Secuencia
 
@@ -10,7 +10,8 @@ Actualización al 23/11/2026, basada en los chats exportados, el paquete final d
 | 13–16/11 | Adquisición local cada 30 s. Se recuperó la SD para análisis offline, considerando desde aproximadamente las 20:30 del viernes |
 | 18/11 | Receptor v2 y sincronizador en Ubuntu; ciclo de doce ubicaciones con CRC8 y confirmaciones HTTP. Periodicidad regular de 10 min |
 | 19–20/11 | Dashboard de producción con evolución temporal interior/exterior y ventanas de 24 y 48 h |
-| 23/11 | Corte de luz informado por Leonardo. Servidor apagado, requiere encendido manual. Pendiente revisar hasta cuándo midió el nodo, retorno de energía, recuperación y autonomía |
+| 23/11 | Se informó el corte eléctrico y el apagado del servidor |
+| 24/11 | Encendido manual del servidor, reenvío automático y seguimiento de las series recuperadas en Grafana |
 
 ## Evidencia de la migración
 
@@ -25,11 +26,9 @@ El paquete `SPC_MANIANA_FINAL_2026-11-18.zip` contiene firmware FINAL, receptor,
 
 Grafana de producción es el servicio existente en el laboratorio. La captura `03_servicios_docker_produccion.png` entregada por Leonardo muestra imagen `grafana/grafana:11.0.0`; la versión 12.3.0 corresponde al banco con Compose de notebook.
 
-## Verificación del corte
+## Corte eléctrico y recuperación del 24/11
 
-Registrar hora de corte, retorno eléctrico y encendido del servidor. Comparar CSV y eventos, localizar último ciclo y siguiente `BOOT`, cotejar cola y ACK antes/después y consultar el mismo intervalo por ubicación en SQLite/InfluxDB. Una muestra cada 10 min y 12 ubicaciones válidas implican 72 registros por hora completa, con ajuste por arranques, límites de ventana y lecturas inválidas.
-
-Un intervalo vacío en Grafana puede corresponder a servidor detenido, a pendientes o a adquisición interrumpida. La evidencia de SD y eventos permitirá discriminarlo. El log no registra durante falta de energía, y requiere RTC/SD disponibles. Registrar incertidumbre si faltan horas o estado inicial de las baterías.
+El dispositivo de adquisición permaneció encendido y siguió registrando en la microSD. El 24/11, alrededor de las 11:00 (hora argentina), se encendió manualmente la computadora del laboratorio. Cuando volvieron a estar disponibles los servicios, el dispositivo reanudó automáticamente el envío. La secuencia de la OLED mostró 4.452, 4.117 y 3.359 registros pendientes. A las 16:40 del 24/11, Grafana mostró las series del fin de semana sin huecos visibles, con las marcas de tiempo de adquisición. El seguimiento visual queda pendiente de cotejo por ubicación entre microSD, SQLite e InfluxDB. La duración exacta del corte y la autonomía de la UPS siguen sin medirse.
 
 ## Antecedentes abiertos
 
