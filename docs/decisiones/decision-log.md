@@ -160,7 +160,7 @@ Se caracterizaron sensores SHT30 frente a referencia en noviembre (ver registro)
 
 ## DEC-030 — Evaluación del corte eléctrico del 23/11
 
-**Estado — incidente informado, resultado pendiente.** El servidor quedó apagado y requiere encendido manual. Falta determinar la duración de adquisición del nodo con UPS, horas de reposición y recuperación, integridad de SD y resultado de reenvío. La capacidad declarada de dos baterías de 2600 mAh no sustituye una medición de consumo/autonomía. Completar el registro del incidente tras la inspección.
+**Estado al 24/11/2026 — reenvío automático observado.** El dispositivo siguió adquiriendo durante la indisponibilidad del servidor. El encendido manual del 24/11 permitió que los servicios volvieran a responder y que el nodo reenviara los pendientes. La revisión en Grafana a las 16:40 mostró continuidad visual. El [registro de producción](../pruebas/puesta-en-servicio-2026-11-18.md#corte-eléctrico-y-recuperación-del-2411) conserva los detalles y el alcance de la verificación. Quedan pendientes el cotejo de históricos y la medición de autonomía.
 
 ## DEC-031 — Ahorro energético y reintentos espaciados
 
